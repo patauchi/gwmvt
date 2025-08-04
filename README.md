@@ -40,10 +40,8 @@ The `gwmvt` package provides high-performance implementations of geographically 
 install.packages(c("devtools", "Rcpp", "RcppArmadillo", "RcppParallel"))
 
 # Install from GitHub (when available)
-devtools::install_github("yourusername/gwmvt")
+devtools::install_github("patauchi/gwmvt")
 
-# Or install from local directory
-devtools::install("path/to/gwmvt")
 ```
 
 ### System Requirements
@@ -210,10 +208,10 @@ If you use this package in your research, please cite:
 ```
 @Manual{gwmvt,
   title = {gwmvt: Geographically Weighted Multivariate Analysis Toolkit},
-  author = {Your Name},
+  author = {P.Joser Atauchi},
   year = {2024},
   note = {R package version 0.1.0},
-  url = {https://github.com/yourusername/gwmvt}
+  url = {https://github.com/patauchi/gwmvt}
 }
 ```
 

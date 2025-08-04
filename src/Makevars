@@ -1,0 +1,15 @@
+## C++ optimization flags for high performance
+CXX_STD = CXX14
+
+## Enable OpenMP for parallelization
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+## Optimization flags
+PKG_CXXFLAGS += -O3 -march=native -mtune=native -ffast-math -funroll-loops -fno-signed-zeros -fno-trapping-math
+
+## Additional flags for Armadillo
+PKG_CXXFLAGS += -DARMA_NO_DEBUG -DARMA_DONT_USE_WRAPPER -DARMA_USE_LAPACK -DARMA_USE_BLAS -DARMA_DONT_PRINT_FAST_MATH_WARNING
+
+## Include paths
+PKG_CPPFLAGS = -I../inst/include

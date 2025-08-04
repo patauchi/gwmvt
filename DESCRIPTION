@@ -1,0 +1,39 @@
+Package: gwmvt
+Type: Package
+Title: Geographically Weighted Multivariate Analysis Toolkit
+Version: 0.1.0
+Date: 2024-01-15
+Authors@R: c(
+    person("Your", "Name", email = "your.email@example.com",
+           role = c("aut", "cre"))
+    )
+Author: Your Name
+Maintainer: Your Name <your.email@example.com>
+Description: High-performance implementation of geographically weighted multivariate
+    analysis methods including GWPCA, GWCCA, GWPLS, and more. All computations are
+    implemented in C++ with support for parallel processing. Core functions work
+    directly with matrices for maximum flexibility and performance.
+License: GPL (>= 3)
+Depends:
+    R (>= 4.0.0)
+Imports:
+    Rcpp (>= 1.0.7),
+    RcppArmadillo (>= 0.10.7.0.0),
+    RcppParallel (>= 5.0.2),
+    Matrix,
+    methods
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    RcppParallel
+SystemRequirements: GNU make, C++14
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    ggplot2,
+    viridis
+Config/testthat/edition: 3
