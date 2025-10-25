@@ -176,10 +176,14 @@ private:
         for (int j = 0; j < p; ++j) {
             s_stats.center(j) = weighted_median(data.col(j), weights);
             s_stats.scale(j) = weighted_mad(data.col(j), weights, s_stats.center(j));
+            if (!std::isfinite(s_stats.scale(j)) || s_stats.scale(j) < 1e-6) {
+                s_stats.scale(j) = 1e-6;
+            }
         }
         
         // Initial scatter as diagonal
         s_stats.covariance = arma::diagmat(s_stats.scale % s_stats.scale);
+        s_stats.covariance = arma::symmatu(s_stats.covariance);
         
         // S-estimation iterations
         double scale = 1.0;
@@ -205,7 +209,12 @@ private:
             for (int i = 0; i < n; ++i) {
                 w_vec(i) = weight_biweight(distances(i) / scale, c_breakdown_) * weights(i);
             }
-            w_vec /= arma::sum(w_vec);
+            double w_sum = arma::sum(w_vec);
+            if (w_sum <= 1e-12 || !std::isfinite(w_sum)) {
+                w_vec.fill(1.0 / static_cast<double>(n));
+            } else {
+                w_vec /= w_sum;
+            }
             
             // Update center and covariance
             Vec new_center = weighted_mean(data, w_vec);
@@ -217,6 +226,7 @@ private:
             
             s_stats.center = new_center;
             s_stats.covariance = weighted_covariance(data, w_vec, s_stats.center);
+            s_stats.covariance = arma::symmatu(s_stats.covariance);
             
             // Apply S-estimator consistency factor
             s_stats.covariance *= scale * scale / k0_bdp_;
@@ -232,6 +242,9 @@ private:
     // Compute S-scale
     double compute_s_scale(const Vec& distances, const Vec& weights) {
         double scale = arma::median(distances);
+        if (!std::isfinite(scale) || scale < 1e-6) {
+            scale = 1e-6;
+        }
         
         // Scale iteration
         for (int iter = 0; iter < 30; ++iter) {
@@ -244,12 +257,18 @@ private:
             }
             
             double avg_rho = sum_rho / sum_weights;
-            double scale_new = scale * std::sqrt(avg_rho / k0_bdp_);
+            double ratio = avg_rho / k0_bdp_;
+            ratio = std::max(ratio, 1e-8);
+            double scale_new = scale * std::sqrt(ratio);
             
             if (std::abs(scale_new - scale) / scale < 1e-6) {
                 break;
             }
             scale = scale_new;
+        }
+        
+        if (!std::isfinite(scale) || scale < 1e-6) {
+            scale = 1e-6;
         }
         
         return scale;
@@ -270,7 +289,13 @@ private:
             Vec x = data_centered.row(i).t();
             distances(i) = std::sqrt(arma::as_scalar(x.t() * cov_inv * x));
         }
-        
+
+        for (int i = 0; i < n; ++i) {
+            if (!std::isfinite(distances(i))) {
+                distances(i) = 0.0;
+            }
+        }
+
         double s_scale = compute_s_scale(distances, weights);
         
         // M-step with efficiency tuning constant
@@ -282,7 +307,12 @@ private:
             for (int i = 0; i < n; ++i) {
                 m_weights(i) = weight_biweight(distances(i) / s_scale, c_efficiency_) * weights(i);
             }
-            m_weights /= arma::sum(m_weights);
+            double m_sum = arma::sum(m_weights);
+            if (m_sum <= 1e-12 || !std::isfinite(m_sum)) {
+                m_weights.fill(1.0 / static_cast<double>(n));
+            } else {
+                m_weights /= m_sum;
+            }
             
             // Update center
             Vec new_center = weighted_mean(data, m_weights);
@@ -305,12 +335,16 @@ private:
                 if (std::abs(d) < 1e-10) w = 1.0;
                 m_stats.covariance += m_weights(i) * w * (x * x.t());
             }
+            m_stats.covariance = arma::symmatu(m_stats.covariance);
             
             // Update distances for next iteration
             cov_inv = safe_inv(m_stats.covariance);
             for (int i = 0; i < n; ++i) {
                 Vec x = data_centered.row(i).t();
                 distances(i) = std::sqrt(arma::as_scalar(x.t() * cov_inv * x));
+                if (!std::isfinite(distances(i))) {
+                    distances(i) = 0.0;
+                }
             }
         }
         
@@ -342,12 +376,18 @@ private:
             double d = std::sqrt(arma::as_scalar(x.t() * cov_inv * x));
             m_weights(i) = weight_biweight(d, c_efficiency_) * weights(i);
         }
-        m_weights /= arma::sum(m_weights);
+        double m_sum = arma::sum(m_weights);
+        if (m_sum <= 1e-12 || !std::isfinite(m_sum)) {
+            m_weights.fill(1.0 / static_cast<double>(n));
+        } else {
+            m_weights /= m_sum;
+        }
         
         // Update estimates
         RobustStats new_stats(p);
         new_stats.center = weighted_mean(data, m_weights);
         new_stats.covariance = weighted_covariance(data, m_weights, new_stats.center);
+        new_stats.covariance = arma::symmatu(new_stats.covariance);
         
         // Regularize
         regularize_covariance(new_stats.covariance);
@@ -370,6 +410,9 @@ private:
         for (int i = 0; i < n; ++i) {
             Vec x = data_centered.row(i).t();
             distances(i) = std::sqrt(arma::as_scalar(x.t() * cov_inv * x));
+            if (!std::isfinite(distances(i))) {
+                distances(i) = 0.0;
+            }
         }
         
         // Hard rejection using chi-square cutoff
@@ -381,12 +424,18 @@ private:
                 final_weights(i) *= 0.01;
             }
         }
-        final_weights /= arma::sum(final_weights);
+        double final_sum = arma::sum(final_weights);
+        if (final_sum <= 1e-12 || !std::isfinite(final_sum)) {
+            final_weights.fill(1.0 / static_cast<double>(n));
+        } else {
+            final_weights /= final_sum;
+        }
         
         // Final estimates
         RobustStats final_stats(p);
         final_stats.center = weighted_mean(data, final_weights);
         final_stats.covariance = weighted_covariance(data, final_weights, final_stats.center);
+        final_stats.covariance = arma::symmatu(final_stats.covariance);
         
         // Regularize
         regularize_covariance(final_stats.covariance);
