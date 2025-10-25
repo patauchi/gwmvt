@@ -136,23 +136,25 @@ inline bool check_condition_number(const Mat& A, double max_cond = 1e10) {
 
 // Safe matrix inversion with regularization
 inline Mat safe_inv(const Mat& A, double reg_param = 1e-8) {
-    Mat A_reg = A;
-    A_reg.diag() += reg_param;
+    // Symmetrize to guard against numerical asymmetry
+    Mat A_sym = arma::symmatu(0.5 * (A + A.t()));
     
+    // Attempt increasingly strong regularization before falling back
+    double lambda = reg_param;
     Mat A_inv;
-    bool success = arma::inv_sympd(A_inv, A_reg);
     
-    if (!success) {
-        // Try with more regularization
-        A_reg.diag() += reg_param * 10;
-        success = arma::inv_sympd(A_inv, A_reg);
-        
-        if (!success) {
-            throw std::runtime_error("Matrix inversion failed even with regularization");
+    for (int attempt = 0; attempt < 5; ++attempt) {
+        Mat A_reg = A_sym;
+        A_reg.diag() += lambda;
+        if (arma::inv_sympd(A_inv, A_reg)) {
+            return A_inv;
         }
+        lambda *= 10.0;
     }
     
-    return A_inv;
+    // Fall back to Moore-Penrose pseudoinverse, ensuring symmetry
+    Mat A_pinv = arma::pinv(A_sym);
+    return arma::symmatu(A_pinv);
 }
 
 // Mahalanobis distance calculation

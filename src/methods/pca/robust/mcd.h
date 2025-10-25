@@ -4,6 +4,7 @@
 #include "../../base/robust_estimator.h"
 #include "../../../core/algebra.h"
 #include <algorithm>
+#include <cmath>
 #include <random>
 #include <set>
 
@@ -85,6 +86,7 @@ public:
         
         // Try multiple random subsets
         int actual_trials = std::min(n_trials_, choose_approx(n, h));
+        actual_trials = std::max(actual_trials, 1);
         
         for (int trial = 0; trial < actual_trials; ++trial) {
             // Select random h-subset with probability proportional to weights
@@ -165,22 +167,42 @@ public:
 private:
     // Weighted random subset selection
     UVec weighted_random_subset(int n, int h, const Vec& weights, std::mt19937& gen) {
-        // Use weighted sampling without replacement
-        std::vector<double> probs(weights.begin(), weights.end());
-        std::discrete_distribution<int> dist(probs.begin(), probs.end());
-        
-        std::set<int> selected;
-        while (selected.size() < static_cast<size_t>(h)) {
-            int idx = dist(gen);
-            selected.insert(idx);
+        if (h >= n) {
+            return arma::regspace<UVec>(0, n - 1);
         }
-        
+
+        std::uniform_real_distribution<double> unif(0.0, 1.0);
+        std::vector<std::pair<double, int>> keys;
+        keys.reserve(n);
+
+        for (int i = 0; i < n; ++i) {
+            double w = weights(i);
+            if (!std::isfinite(w) || w <= 0.0) {
+                w = 1e-12;
+            }
+
+            double u = 0.0;
+            while (u <= 0.0) {
+                u = unif(gen);
+            }
+            double key = std::log(u) / w;
+            keys.emplace_back(key, i);
+        }
+
+        std::nth_element(
+            keys.begin(),
+            keys.begin() + h,
+            keys.end(),
+            [](const std::pair<double, int>& a, const std::pair<double, int>& b) {
+                return a.first > b.first;
+            }
+        );
+
         UVec subset_idx(h);
-        int i = 0;
-        for (int idx : selected) {
-            subset_idx(i++) = idx;
+        for (int i = 0; i < h; ++i) {
+            subset_idx(i) = keys[i].second;
         }
-        
+
         return subset_idx;
     }
     

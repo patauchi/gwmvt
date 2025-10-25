@@ -239,6 +239,7 @@ private:
         // Initial estimate
         RobustStats stats = estimate(data, weights);
         Vec old_center = stats.center;
+        Vec lof_weights = stats.weights;
         
         // Iterative refinement
         for (int iter = 0; iter < config_.max_iterations; ++iter) {
@@ -247,7 +248,7 @@ private:
             
             // Recompute LOF in transformed space
             Vec lof_scores = compute_lof_scores(transformed_data, weights);
-            Vec lof_weights = convert_lof_to_weights(lof_scores, weights);
+            lof_weights = convert_lof_to_weights(lof_scores, weights);
             
             // Update estimates
             stats.center = weighted_mean(data, lof_weights);

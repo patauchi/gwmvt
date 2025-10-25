@@ -1,12 +1,9 @@
 ## C++ optimization flags for high performance on Windows
-CXX_STD = CXX14
+CXX_STD = CXX17
 
 ## Enable OpenMP for parallelization on Windows
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
-## Optimization flags for Windows
-PKG_CXXFLAGS += -O3 -march=native -mtune=native
 
 ## Additional flags for Armadillo
 PKG_CXXFLAGS += -DARMA_NO_DEBUG -DARMA_DONT_USE_WRAPPER -DARMA_USE_LAPACK -DARMA_USE_BLAS -DARMA_DONT_PRINT_FAST_MATH_WARNING

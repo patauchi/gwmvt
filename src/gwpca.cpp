@@ -1,6 +1,8 @@
 #include <RcppArmadillo.h>
 #include <memory>
 #include <string>
+#include "methods/pca/robust/all_robust_methods.h"
+#include "methods/pca/gwpca.cpp"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -12,15 +14,6 @@
 
 using namespace Rcpp;
 using namespace arma;
-
-// Simple structure to hold PCA results at one location
-struct LocalPCAResult {
-    vec eigenvalues;
-    mat eigenvectors;
-    vec center;
-    
-    LocalPCAResult(int p) : eigenvalues(p), eigenvectors(p, p), center(p) {}
-};
 
 // Calculate distances from one point to all others
 vec calculate_distances(const mat& coords, int focal_idx) {
@@ -66,40 +59,12 @@ mat weighted_covariance(const mat& data, const vec& weights, const vec& center) 
     return cov;
 }
 
-// Perform local PCA at one location
-LocalPCAResult local_pca(const mat& data, const vec& weights, bool use_correlation) {
-    int p = data.n_cols;
-    LocalPCAResult result(p);
-    
-    // Calculate weighted center
-    result.center = weighted_mean(data, weights);
-    
-    // Calculate weighted covariance
-    mat cov = weighted_covariance(data, weights, result.center);
-    
-    // Convert to correlation if requested
-    if (use_correlation) {
-        vec sds = sqrt(cov.diag());
-        cov = cov / (sds * sds.t());
-    }
-    
-    // Eigen decomposition
-    eig_sym(result.eigenvalues, result.eigenvectors, cov);
-    
-    // Sort in descending order
-    uvec indices = sort_index(result.eigenvalues, "descend");
-    result.eigenvalues = result.eigenvalues(indices);
-    result.eigenvectors = result.eigenvectors.cols(indices);
-    
-    return result;
-}
-
 // Main GWPCA function
 // [[Rcpp::export]]
 List gwpca_cpp(const arma::mat& data,
                const arma::mat& coords,
                double bandwidth,
-               std::string method = "adaptive_huber",
+               std::string method = "standard",
                bool use_correlation = false,
                int k = 0,
                bool detect_outliers = true,
@@ -114,72 +79,77 @@ List gwpca_cpp(const arma::mat& data,
                int n_threads = 0,
                bool verbose = false) {
     
-    int n = data.n_rows;
     int p = data.n_cols;
+    int n_components = (k <= 0) ? p : std::min(k, p);
     
-    // Determine number of components to retain
-    if (k <= 0) k = p;
-    k = std::min(k, p);
+    // Configure core settings
+    gwmvt::GWConfig config;
+    config.bandwidth = bandwidth;
+    config.kernel_type = gwmvt::KernelType::GAUSSIAN;
+    config.adaptive_bandwidth = false;
+    config.parallel_strategy = parallel ? gwmvt::ParallelStrategy::AUTO
+                                        : gwmvt::ParallelStrategy::SEQUENTIAL;
+    config.n_threads = n_threads;
+    config.verbose = verbose;
+    config.show_progress = verbose;
     
-    // Set up parallel processing
-#ifdef _OPENMP
-    if (parallel && n_threads > 0) {
-        omp_set_num_threads(n_threads);
+    // Configure GWPCA-specific options
+    auto pca_config = std::make_shared<gwmvt::GWPCAConfig>();
+    pca_config->n_components = n_components;
+    pca_config->use_correlation = use_correlation;
+    pca_config->detect_outliers = detect_outliers;
+    pca_config->outlier_threshold = outlier_threshold;
+    pca_config->trim_proportion = trim_prop;
+    pca_config->h_fraction = h_fraction;
+    pca_config->lof_k = lof_k;
+    pca_config->bacon_alpha = bacon_alpha;
+    pca_config->depth_type = depth_type;
+    pca_config->robpca_k_max = robpca_k_max;
+    
+    try {
+        pca_config->robust_method = gwmvt::parse_robust_method(method);
+    } catch (const std::invalid_argument& ex) {
+        stop(ex.what());
     }
-#endif
+
+    config.method_config = pca_config;
     
-    // Initialize output matrices
-    mat eigenvalues(n, k, fill::zeros);
-    cube loadings(n, p, k, fill::zeros);
-    mat scores(n, k, fill::zeros);
-    mat var_explained(n, k, fill::zeros);
-    mat centers(n, p, fill::zeros);
+    // Fit model
+    gwmvt::GWPCA gwpca_obj(data, coords, config);
+    auto result_ptr = gwpca_obj.fit();
+    auto* pca_result = dynamic_cast<gwmvt::GWPCAResult*>(result_ptr.get());
     
-    // Process each location
-#pragma omp parallel for if(parallel)
-    for (int i = 0; i < n; ++i) {
-        // Calculate distances and weights
-        vec distances = calculate_distances(coords, i);
-        vec weights = gaussian_weights(distances, bandwidth);
-        
-        // Normalize weights
-        weights = weights / sum(weights);
-        
-        // Perform local PCA
-        LocalPCAResult local_result = local_pca(data, weights, use_correlation);
-        
-        // Store results
-        centers.row(i) = local_result.center.t();
-        
-        // Extract k components
-        for (int j = 0; j < k; ++j) {
-            eigenvalues(i, j) = local_result.eigenvalues(j);
-            loadings.tube(i, j) = local_result.eigenvectors.col(j);
-            
-            // Calculate scores
-            vec centered_data = data.row(i).t() - local_result.center;
-            scores(i, j) = dot(centered_data, local_result.eigenvectors.col(j));
-            
-            // Calculate variance explained
-            double total_var = sum(local_result.eigenvalues);
-            if (total_var > 0) {
-                var_explained(i, j) = local_result.eigenvalues(j) / total_var;
-            }
-        }
+    if (!pca_result) {
+        stop("Internal error: failed to retrieve GWPCA result.");
     }
     
-    // Create output list
+    // Subset eigenvalues to requested components
+    arma::mat eigenvalues_subset = (n_components < p)
+        ? pca_result->eigenvalues.cols(0, n_components - 1)
+        : pca_result->eigenvalues;
+    
+    // Prepare output
     List result = List::create(
-        Named("eigenvalues") = eigenvalues,
-        Named("loadings") = loadings,
-        Named("scores") = scores,
-        Named("var_explained") = var_explained,
-        Named("centers") = centers,
-        Named("coords") = coords,
+        Named("eigenvalues") = eigenvalues_subset,
+        Named("loadings") = pca_result->loadings,
+        Named("scores") = pca_result->scores,
+        Named("var_explained") = pca_result->var_explained,
+        Named("centers") = pca_result->centers,
+        Named("coords") = pca_result->coords,
         Named("bandwidth") = bandwidth,
         Named("method") = method,
         Named("use_correlation") = use_correlation,
-        Named("n_components") = k
+        Named("n_components") = n_components,
+        Named("spatial_outliers") = pca_result->spatial_outliers
+    );
+    
+    // Attach diagnostics
+    const gwmvt::DiagnosticInfo& diag = gwpca_obj.get_diagnostics();
+    result.attr("diagnostics") = List::create(
+        Named("numerical_issues") = diag.numerical_issues,
+        Named("convergence_issues") = diag.convergence_issues,
+        Named("warnings") = diag.warnings,
+        Named("errors") = diag.errors
     );
     
     return result;

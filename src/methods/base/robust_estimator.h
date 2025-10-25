@@ -132,6 +132,8 @@ protected:
     
     // Regularize covariance matrix
     void regularize_covariance(Mat& cov_mat, double reg_param = 1e-8) {
+        // Enforce symmetry to avoid numerical asymmetries before regularization
+        cov_mat = arma::symmatu(cov_mat);
         cov_mat.diag() += reg_param;
     }
     

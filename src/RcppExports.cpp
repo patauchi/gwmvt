@@ -16,7 +16,7 @@ List gwpca_cpp(const arma::mat& data, const arma::mat& coords, double bandwidth,
 RcppExport SEXP _gwmvt_gwpca_cpp(SEXP dataSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP, SEXP methodSEXP, SEXP use_correlationSEXP, SEXP kSEXP, SEXP detect_outliersSEXP, SEXP outlier_thresholdSEXP, SEXP trim_propSEXP, SEXP h_fractionSEXP, SEXP lof_kSEXP, SEXP bacon_alphaSEXP, SEXP depth_typeSEXP, SEXP robpca_k_maxSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
@@ -43,7 +43,7 @@ arma::uvec detect_spatial_outliers_cpp(const arma::mat& data, const arma::mat& c
 RcppExport SEXP _gwmvt_detect_spatial_outliers_cpp(SEXP dataSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP, SEXP thresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
@@ -57,7 +57,7 @@ arma::vec adaptive_bandwidth_nn(const arma::mat& coords, int k);
 RcppExport SEXP _gwmvt_adaptive_bandwidth_nn(SEXP coordsSEXP, SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(adaptive_bandwidth_nn(coords, k));
@@ -69,7 +69,7 @@ double morans_i(const arma::vec& values, const arma::mat& coords, double bandwid
 RcppExport SEXP _gwmvt_morans_i(SEXP valuesSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::vec& >::type values(valuesSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
@@ -82,7 +82,7 @@ arma::vec local_morans_i(const arma::vec& values, const arma::mat& coords, doubl
 RcppExport SEXP _gwmvt_local_morans_i(SEXP valuesSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::vec& >::type values(valuesSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
     Rcpp::traits::input_parameter< double >::type bandwidth(bandwidthSEXP);
@@ -95,7 +95,7 @@ bool has_openmp_support();
 RcppExport SEXP _gwmvt_has_openmp_support() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(has_openmp_support());
     return rcpp_result_gen;
 END_RCPP
@@ -105,7 +105,7 @@ int get_max_threads();
 RcppExport SEXP _gwmvt_get_max_threads() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(get_max_threads());
     return rcpp_result_gen;
 END_RCPP
@@ -114,7 +114,7 @@ END_RCPP
 void set_num_threads(int n);
 RcppExport SEXP _gwmvt_set_num_threads(SEXP nSEXP) {
 BEGIN_RCPP
-    
+    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     set_num_threads(n);
     return R_NilValue;

@@ -118,14 +118,15 @@ private:
         
         // Robust initial estimates
         Vec robust_center(p);
+        UVec valid_idx = arma::find(weights > 0.01);
         for (int j = 0; j < p; ++j) {
-            Vec valid_data = data.col(j)(arma::find(weights > 0.01));
-            robust_center(j) = arma::median(valid_data);
+            Vec column = data.col(j);
+            Vec col_data = (valid_idx.n_elem > 0) ? column(valid_idx) : column;
+            robust_center(j) = arma::median(col_data);
         }
         
         // Robust covariance using weighted quartiles
         Mat data_centered = data.each_row() - robust_center.t();
-        UVec valid_idx = arma::find(weights > 0.01);
         
         if (valid_idx.n_elem < data.n_cols + 1) {
             depths.fill(1.0);

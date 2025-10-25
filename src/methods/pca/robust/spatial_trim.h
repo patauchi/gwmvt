@@ -90,17 +90,6 @@ public:
             }
         }
         
-        // Add diagnostic info
-        if (config_.verbose) {
-            double trim_actual = static_cast<double>(n_trimmed) / n;
-            if (std::abs(trim_actual - trim_proportion_) > 0.1) {
-                diagnostics_.add_warning("Actual trim proportion (" + 
-                                       std::to_string(trim_actual) + 
-                                       ") differs from target (" + 
-                                       std::to_string(trim_proportion_) + ")");
-            }
-        }
-        
         return final_stats;
     }
     

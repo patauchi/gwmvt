@@ -1,7 +1,7 @@
 Package: gwmvt
 Type: Package
 Title: Geographically Weighted Multivariate Analysis
-Version: 0.1.0
+Version: 0.1.6
 Date: 2024-01-15
 Authors@R: c(
     person("P.Joser", "Atauchi", email = "patauchi@gmail.com",
@@ -18,17 +18,13 @@ Depends:
     R (>= 4.0.0)
 Imports:
     Rcpp (>= 1.0.7),
-    RcppArmadillo (>= 0.10.7.0.0),
-    RcppParallel (>= 5.0.2),
-    Matrix,
-    methods
+    RcppParallel (>= 5.0.2)
 LinkingTo:
     Rcpp,
     RcppArmadillo,
     RcppParallel
-SystemRequirements: GNU make, C++14
+SystemRequirements: GNU make, C++17
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.2
 Suggests:
     knitr,

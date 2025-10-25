@@ -133,7 +133,7 @@ private:
         
         // If no valid subset found, use weighted estimates
         if (min_volume == std::numeric_limits<double>::infinity()) {
-+Stats robust_center(p);
+            RobustStats robust_center(p);
             for (int j = 0; j < p; ++j) {
                 robust_center.center(j) = weighted_median(data.col(j), weights);
                 robust_center.scale(j) = weighted_mad(data.col(j), weights, robust_center.center(j));

@@ -7,7 +7,6 @@
 #include <map>
 #include <vector>
 #include <functional>
-#include <any>
 
 namespace gwmvt {
 
@@ -185,31 +184,12 @@ struct LocalPCAResult {
 // Base result structure
 class GWResult {
 protected:
-    std::map<std::string, std::any> data_;
     GWConfig config_;
     
 public:
     GWResult() = default;
     explicit GWResult(const GWConfig& config) : config_(config) {}
     virtual ~GWResult() = default;
-    
-    template<typename T>
-    void set(const std::string& key, const T& value) {
-        data_[key] = value;
-    }
-    
-    template<typename T>
-    T get(const std::string& key) const {
-        auto it = data_.find(key);
-        if (it == data_.end()) {
-            throw std::runtime_error("Key not found: " + key);
-        }
-        return std::any_cast<T>(it->second);
-    }
-    
-    bool has(const std::string& key) const {
-        return data_.find(key) != data_.end();
-    }
     
     GWConfig get_config() const { return config_; }
     
@@ -225,6 +205,7 @@ public:
     Mat scores;           // n x k matrix
     Mat var_explained;    // n x k matrix
     Mat coords;           // n x 2 matrix
+    Mat centers;          // n x p matrix
     UVec spatial_outliers; // n vector
     
     // Constructor
@@ -235,12 +216,14 @@ public:
         eigenvalues(n, p, arma::fill::zeros),
         loadings(n, p, k, arma::fill::zeros),
         scores(n, k, arma::fill::zeros),
-        var_explained(n, k, arma::fill::zeros) {
+        var_explained(n, k, arma::fill::zeros),
+        centers(n, p, arma::fill::zeros) {
         
         eigenvalues.fill(arma::datum::nan);
         loadings.fill(arma::datum::nan);
         scores.fill(arma::datum::nan);
         var_explained.fill(arma::datum::nan);
+        centers.fill(arma::datum::nan);
     }
     
     std::string get_method_name() const override {

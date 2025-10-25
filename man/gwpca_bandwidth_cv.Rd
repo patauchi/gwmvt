@@ -33,7 +33,8 @@ gwpca_bandwidth_cv(
 \item{verbose}{Show progress}
 }
 \value{
-List containing optimal bandwidth and criterion values
+List containing the optimal bandwidth, the evaluated bandwidths, the selection
+criterion, and a score for each candidate.
 }
 \description{
 Optimal bandwidth selection for GWPCA

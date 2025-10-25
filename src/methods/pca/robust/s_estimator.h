@@ -24,7 +24,7 @@ public:
         // Check for custom breakdown point
         auto it = config.params.find("breakdown_point");
         if (it != config.params.end()) {
-+            b_ = std::max(0.1, std::min(0.5, it->second));
+            b_ = std::max(0.1, std::min(0.5, it->second));
             // Adjust tuning constant based on breakdown point
             update_tuning_constant();
         }
@@ -284,7 +284,7 @@ private:
         RobustStats current_stats = initial_stats;
         
         for (int ref = 0; ref < max_refinements_; ++ref) {
-+            // Center data
+            // Center data
             Mat data_centered = data.each_row() - current_stats.center.t();
             
             // Compute S-scale

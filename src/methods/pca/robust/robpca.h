@@ -4,6 +4,7 @@
 #include "../../base/robust_estimator.h"
 #include "../../../core/algebra.h"
 #include <algorithm>
+#include <cmath>
 #include <random>
 #include <vector>
 
@@ -89,7 +90,14 @@ public:
             // Transform back to original space
             Mat data_clean = data.rows(arma::find(outlier_flags == 0));
             Vec weights_clean = robust_weights(arma::find(outlier_flags == 0));
-            weights_clean /= arma::sum(weights_clean);
+            if (weights_clean.n_elem > 0) {
+                double clean_sum = arma::sum(weights_clean);
+                if (clean_sum > 0.0) {
+                    weights_clean /= clean_sum;
+                } else {
+                    weights_clean.fill(1.0 / weights_clean.n_elem);
+                }
+            }
             
             stats.center = weighted_mean(data, robust_weights);
             stats.covariance = weighted_covariance(data, robust_weights, stats.center);
@@ -127,46 +135,75 @@ private:
         int n = data.n_rows;
         int p = data.n_cols;
         
-        // Use robust SVD on subset
-        UVec high_weight_idx = arma::find(weights > arma::quantile(weights, 0.5));
+        if (n == 0 || p == 0) {
+            return std::make_tuple(Mat(n, 0, arma::fill::zeros),
+                                   Mat(p, 0, arma::fill::zeros),
+                                   Vec(p, arma::fill::zeros));
+        }
         
-        if (high_weight_idx.n_elem < p + 1) {
-            high_weight_idx = arma::sort_index(weights, "descend").head(p + 1);
+        // Use robust SVD on subset
+        double weight_median = arma::median(weights);
+        UVec high_weight_idx = arma::find(weights > weight_median);
+        
+        if (high_weight_idx.n_elem < static_cast<arma::uword>(p + 1)) {
+            UVec sorted_idx = arma::sort_index(weights, "descend");
+            arma::uword take = std::min(
+                static_cast<arma::uword>(p + 1),
+                sorted_idx.n_elem
+            );
+            high_weight_idx = sorted_idx.head(take);
         }
         
         Mat data_subset = data.rows(high_weight_idx);
         Vec weights_subset = weights(high_weight_idx);
-        weights_subset /= arma::sum(weights_subset);
+        double weight_sum = arma::sum(weights_subset);
+        if (weight_sum <= 0.0) {
+            weights_subset.fill(1.0 / weights_subset.n_elem);
+        } else {
+            weights_subset /= weight_sum;
+        }
         
         // Center using spatial median (more robust than mean)
         Vec center = compute_spatial_median(data_subset, weights_subset);
-        Mat data_centered = data_subset.each_row() - center.t();
+        Mat data_centered_subset = data_subset.each_row() - center.t();
         
         // Weighted SVD
-        for (int i = 0; i < data_subset.n_rows; ++i) {
-            data_centered.row(i) *= std::sqrt(weights_subset(i));
+        for (arma::uword i = 0; i < data_subset.n_rows; ++i) {
+            double w = std::sqrt(std::max(weights_subset(i), 0.0));
+            data_centered_subset.row(i) *= w;
         }
         
         Mat U, V;
         Vec s;
-        arma::svd_econ(U, s, V, data_centered, "right");
+        bool svd_success = arma::svd_econ(U, s, V, data_centered_subset, "right");
         
-        // Determine number of components to keep
+        Mat data_centered_full = data.each_row() - center.t();
+        
+        if (!svd_success || s.n_elem == 0) {
+            Mat identity = arma::eye<Mat>(p, p);
+            return std::make_tuple(data_centered_full, identity, center);
+        }
+        
         Vec s2 = s % s;
-        Vec cum_var = arma::cumsum(s2) / arma::sum(s2);
+        double total_var = arma::sum(s2);
         
         int k_keep = 1;
-        for (int i = 0; i < cum_var.n_elem; ++i) {
-            if (cum_var(i) >= 0.99) {
-                k_keep = i + 1;
-                break;
+        if (total_var > 0) {
+            Vec cum_var = arma::cumsum(s2) / total_var;
+            for (int i = 0; i < static_cast<int>(cum_var.n_elem); ++i) {
+                if (cum_var(i) >= 0.99) {
+                    k_keep = i + 1;
+                    break;
+                }
             }
         }
-        k_keep = std::min(k_keep, k_max_);
         
-        // Transform all data
+        k_keep = std::max(1, std::min({k_keep,
+                                       k_max_,
+                                       static_cast<int>(V.n_cols)}));
+        
         Mat transform = V.cols(0, k_keep - 1);
-        Mat data_reduced = (data.each_row() - center.t()) * transform;
+        Mat data_reduced = data_centered_full * transform;
         
         return std::make_tuple(data_reduced, transform, center);
     }
@@ -176,9 +213,18 @@ private:
         int n = data.n_rows;
         int p = data.n_cols;
         
+        if (n == 0 || p == 0) {
+            return UVec(n, arma::fill::zeros);
+        }
+        
         // Generate random directions
         arma::arma_rng::set_seed_random();
-        int actual_directions = std::min(n_directions_, static_cast<int>(std::pow(2, p) - 1));
+        double theoretical_max = (p < 30)
+            ? std::pow(2.0, static_cast<double>(p)) - 1.0
+            : std::pow(2.0, 30.0) - 1.0;
+        int max_directions = static_cast<int>(std::max(1.0, theoretical_max));
+        int actual_directions = std::min(n_directions_, max_directions);
+        actual_directions = std::max(1, actual_directions);
         
         Mat directions(p, actual_directions, arma::fill::randn);
         for (int j = 0; j < actual_directions; ++j) {
@@ -193,8 +239,18 @@ private:
             Vec projected = data * direction;
             
             // Robust location and scale
-            Vec valid_proj = projected(arma::find(weights > 0.01));
-            Vec valid_weights = weights(arma::find(weights > 0.01));
+            UVec valid_idx = arma::find(weights > 0.01);
+            if (valid_idx.is_empty()) {
+                valid_idx = arma::regspace<UVec>(0, n - 1);
+            }
+            Vec valid_proj = projected(valid_idx);
+            Vec valid_weights = weights(valid_idx);
+            double valid_sum = arma::sum(valid_weights);
+            if (valid_sum <= 0.0) {
+                valid_weights.fill(1.0 / valid_weights.n_elem);
+            } else {
+                valid_weights /= valid_sum;
+            }
             
             double location = weighted_median(valid_proj, valid_weights);
             double scale;

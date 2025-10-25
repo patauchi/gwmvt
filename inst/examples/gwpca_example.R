@@ -47,9 +47,8 @@ data[outlier_idx, ] <- data[outlier_idx, ] + matrix(rnorm(20 * p, 0, 3), 20, p)
 # ---------------------------
 cat("Running standard GWPCA...\n")
 result_standard <- gwpca(data, coords,
-                        bandwidth = 2.0,
+                        bandwidth = 2,
                         method = "standard",
-                        k = 3,
                         verbose = TRUE)
 
 print(result_standard)
@@ -59,9 +58,8 @@ summary(result_standard)
 # ---------------------------------------------
 cat("\nRunning robust GWPCA with adaptive Huber method...\n")
 result_robust <- gwpca(data, coords,
-                      bandwidth = 2.0,
+                      bandwidth = 2,
                       method = "adaptive_huber",
-                      k = 3,
                       detect_outliers = TRUE,
                       outlier_threshold = 2.5,
                       verbose = TRUE)
@@ -79,10 +77,9 @@ cat("Correctly identified:",
 # ----------------------------------------------------------
 cat("\nRunning GWPCA with correlation matrix...\n")
 result_corr <- gwpca(data, coords,
-                    bandwidth = 2.0,
+                    bandwidth = 2,
                     method = "adaptive_huber",
                     use_correlation = TRUE,
-                    k = 3,
                     verbose = FALSE)
 
 # Example 2: Bandwidth Selection
@@ -97,7 +94,6 @@ cv_result <- gwpca_bandwidth_cv(data, coords,
                                bandwidths = bandwidths,
                                method = "adaptive_huber",
                                criterion = "CV",
-                               k = 3,
                                verbose = TRUE)
 
 cat("\nOptimal bandwidth:", cv_result$optimal, "\n")

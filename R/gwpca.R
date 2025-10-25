@@ -7,10 +7,17 @@
 #' @param bandwidth Positive numeric value for spatial bandwidth
 #' @param method Character string specifying the robust method. Options include:
 #'   \itemize{
-#'     \item "standard" - Standard GWPCA
-#'     \item "adaptive_huber" - Adaptive Huber M-estimator (default)
+#'     \item "standard" - Standard (non-robust) geographically weighted PCA (default)
+#'     \item "adaptive_huber" - Adaptive Huber M-estimator
 #'     \item "adaptive_mcd" - Adaptive Minimum Covariance Determinant
-#'     \item "spatial_trim" - Spatial trimming method
+#'     \item "spatial_trim" - Spatial trimming with fixed or adaptive threshold
+#'     \item "mve" - Minimum Volume Ellipsoid estimator
+#'     \item "s_estimator" - High-breakdown S-estimator
+#'     \item "mm_estimator" - MM-estimator combining S and M steps
+#'     \item "lof" - Local Outlier Factor down-weighting
+#'     \item "bacon" - BACON (Blocked Adaptive Computationally-efficient Outlier Nominators)
+#'     \item "spatial_depth" - Spatial or Mahalanobis depth weighting
+#'     \item "robpca" - ROBPCA based on projection pursuit
 #'   }
 #' @param use_correlation Logical, whether to use correlation matrix instead of covariance
 #' @param k Integer, number of components to retain (default: all)
@@ -63,7 +70,9 @@
 gwpca <- function(data,
                   coords,
                   bandwidth,
-                  method = c("adaptive_huber", "adaptive_mcd", "spatial_trim", "standard"),
+                  method = c("standard", "adaptive_huber", "adaptive_mcd", "spatial_trim",
+                             "mve", "s_estimator", "mm_estimator",
+                             "lof", "bacon", "spatial_depth", "robpca"),
                   use_correlation = FALSE,
                   k = NULL,
                   detect_outliers = TRUE,
@@ -204,7 +213,7 @@ summary.gwpca <- function(object, ...) {
     bandwidth = object$bandwidth,
     use_correlation = object$use_correlation,
     var_explained_mean = colMeans(object$var_explained, na.rm = TRUE),
-    var_explained_sd = apply(object$var_explained, 2, sd, na.rm = TRUE),
+    var_explained_sd = apply(object$var_explained, 2, stats::sd, na.rm = TRUE),
     eigenvalue_range = apply(object$eigenvalues, 2, range, na.rm = TRUE)
   )
 
@@ -277,7 +286,7 @@ plot.gwpca <- function(x, type = c("variance", "loadings", "scores", "eigenvalue
   switch(type,
     variance = {
       plot(x$coords[, 1], x$coords[, 2],
-           col = heat.colors(100)[cut(x$var_explained[, component], 100)],
+           col = grDevices::heat.colors(100)[cut(x$var_explained[, component], 100)],
            pch = 16,
            xlab = "X Coordinate",
            ylab = "Y Coordinate",
@@ -286,9 +295,9 @@ plot.gwpca <- function(x, type = c("variance", "loadings", "scores", "eigenvalue
 
       # Add legend
       var_range <- range(x$var_explained[, component], na.rm = TRUE)
-      legend("topright",
+      graphics::legend("topright",
              legend = round(seq(var_range[1], var_range[2], length.out = 5), 3),
-             col = heat.colors(5),
+             col = grDevices::heat.colors(5),
              pch = 16,
              title = "Var. Explained")
     },
@@ -296,7 +305,7 @@ plot.gwpca <- function(x, type = c("variance", "loadings", "scores", "eigenvalue
     loadings = {
       # Plot first two loadings for selected component
       plot(x$loadings[, 1, component], x$loadings[, 2, component],
-           col = rgb(x$coords[, 1], x$coords[, 2], 0.5),
+           col = grDevices::rgb(x$coords[, 1], x$coords[, 2], 0.5),
            pch = 16,
            xlab = "Loading 1",
            ylab = "Loading 2",
@@ -306,7 +315,7 @@ plot.gwpca <- function(x, type = c("variance", "loadings", "scores", "eigenvalue
 
     scores = {
       plot(x$coords[, 1], x$coords[, 2],
-           col = heat.colors(100)[cut(x$scores[, component], 100)],
+           col = grDevices::heat.colors(100)[cut(x$scores[, component], 100)],
            pch = 16,
            xlab = "X Coordinate",
            ylab = "Y Coordinate",
@@ -315,7 +324,7 @@ plot.gwpca <- function(x, type = c("variance", "loadings", "scores", "eigenvalue
     },
 
     eigenvalues = {
-      boxplot(x$eigenvalues,
+      graphics::boxplot(x$eigenvalues,
               xlab = "Variable",
               ylab = "Eigenvalue",
               main = "Distribution of Eigenvalues",
@@ -393,7 +402,8 @@ predict.gwpca <- function(object, newdata, newcoords, ...) {
 #' @param parallel Use parallel processing
 #' @param verbose Show progress
 #'
-#' @return List containing optimal bandwidth and criterion values
+#' @return List containing the optimal bandwidth, evaluated bandwidths,
+#'   selection criterion, and the associated score for each candidate
 #' @export
 gwpca_bandwidth_cv <- function(data,
                               coords,
@@ -411,7 +421,10 @@ gwpca_bandwidth_cv <- function(data,
 
   # Generate default bandwidths if not provided
   if (is.null(bandwidths)) {
-    coord_range <- max(dist(coords))
+    coord_range <- if (nrow(coords) > 1) max(stats::dist(coords)) else 1
+    if (!is.finite(coord_range) || coord_range <= 0) {
+      coord_range <- 1
+    }
     bandwidths <- seq(coord_range * 0.05, coord_range * 0.5, length.out = 20)
   }
 
@@ -421,22 +434,87 @@ gwpca_bandwidth_cv <- function(data,
     cat("Testing", length(bandwidths), "bandwidth values using", criterion, "\n")
   }
 
-  # Call C++ function
-  optimal_bw <- gwpca_bandwidth_selection(
+  selection <- gwpca_bandwidth_selection(
     data = data,
     coords = coords,
     bandwidths = bandwidths,
     method = method,
     criterion = criterion,
     k = as.integer(k),
-    parallel = parallel
+    parallel = parallel,
+    verbose = verbose
   )
 
   return(list(
-    optimal = optimal_bw,
+    optimal = selection$optimal,
     bandwidths = bandwidths,
-    criterion = criterion
+    criterion = criterion,
+    scores = selection$scores
   ))
+}
+
+# Internal helper for bandwidth cross-validation
+gwpca_bandwidth_selection <- function(data,
+                                      coords,
+                                      bandwidths,
+                                      method,
+                                      criterion,
+                                      k,
+                                      parallel,
+                                      verbose = FALSE) {
+  if (length(bandwidths) == 0) {
+    stop("At least one bandwidth value is required.")
+  }
+
+  k_eval <- max(1L, min(k, ncol(data)))
+  scores <- rep(NA_real_, length(bandwidths))
+
+  for (i in seq_along(bandwidths)) {
+    bw <- bandwidths[i]
+    if (verbose) {
+      cat(sprintf("  - Fitting bandwidth %.4f\n", bw))
+    }
+
+    fit <- tryCatch(
+      gwpca(
+        data = data,
+        coords = coords,
+        bandwidth = bw,
+        method = method,
+        k = k_eval,
+        parallel = parallel,
+        verbose = verbose
+      ),
+      error = function(e) {
+        if (verbose) {
+          cat("    failed:", conditionMessage(e), "\n")
+        }
+        return(NULL)
+      }
+    )
+
+    if (is.null(fit)) {
+      next
+    }
+
+    k_used <- min(k_eval, NCOL(fit$var_explained))
+    if (k_used < 1) {
+      next
+    }
+
+    variance_matrix <- fit$var_explained[, seq_len(k_used), drop = FALSE]
+    scores[i] <- mean(variance_matrix, na.rm = TRUE)
+  }
+
+  if (all(is.na(scores))) {
+    stop("All bandwidth evaluations failed; unable to select an optimal bandwidth.")
+  }
+
+  best_idx <- which.max(scores)
+  list(
+    optimal = bandwidths[best_idx],
+    scores = stats::setNames(scores, format(bandwidths, trim = TRUE))
+  )
 }
 
 #' Extract variance explained at each location

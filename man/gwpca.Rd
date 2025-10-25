@@ -8,7 +8,8 @@ gwpca(
   data,
   coords,
   bandwidth,
-  method = c("adaptive_huber", "adaptive_mcd", "spatial_trim", "standard"),
+  method = c("standard", "adaptive_huber", "adaptive_mcd", "spatial_trim", "mve",
+    "s_estimator", "mm_estimator", "lof", "bacon", "spatial_depth", "robpca"),
   use_correlation = FALSE,
   k = NULL,
   detect_outliers = TRUE,
@@ -33,10 +34,17 @@ gwpca(
 
 \item{method}{Character string specifying the robust method. Options include:
 \itemize{
-  \item "standard" - Standard GWPCA
-  \item "adaptive_huber" - Adaptive Huber M-estimator (default)
+  \item "standard" - Standard (non-robust) geographically weighted PCA (default)
+  \item "adaptive_huber" - Adaptive Huber M-estimator
   \item "adaptive_mcd" - Adaptive Minimum Covariance Determinant
-  \item "spatial_trim" - Spatial trimming method
+  \item "spatial_trim" - Spatial trimming with fixed or adaptive threshold
+  \item "mve" - Minimum Volume Ellipsoid estimator
+  \item "s_estimator" - High-breakdown S-estimator
+  \item "mm_estimator" - MM-estimator combining S and M steps
+  \item "lof" - Local Outlier Factor down-weighting
+  \item "bacon" - BACON (Blocked Adaptive Computationally-efficient Outlier Nominators)
+  \item "spatial_depth" - Spatial or Mahalanobis depth weighting
+  \item "robpca" - ROBPCA based on projection pursuit
 }}
 
 \item{use_correlation}{Logical, whether to use correlation matrix instead of covariance}

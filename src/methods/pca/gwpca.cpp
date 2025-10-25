@@ -1,6 +1,7 @@
 #include "gwpca.h"
 #include "robust/all_robust_methods.h"
 #include "../../core/algebra.h"
+#include "../../core/distances.h"
 #include "../../utils/diagnostics.h"
 #include <RcppParallel.h>
 #include <algorithm>
@@ -44,6 +45,8 @@ GWPCA::GWPCA(const Mat& data, const Mat& coords, const GWConfig& config)
     robust_estimator_ = create_robust_estimator(pca_config_->robust_method, robust_config);
 }
 
+GWPCA::~GWPCA() = default;
+
 // Prepare for fitting
 void GWPCA::prepare_fit() {
     int n = data_.n_rows;
@@ -76,12 +79,13 @@ void GWPCA::detect_spatial_outliers() {
     
     // Use smaller bandwidth for outlier detection
     double outlier_bandwidth = config_.bandwidth * 0.5;
+    GWConfig outlier_config = config_;
+    outlier_config.bandwidth = outlier_bandwidth;
+    SpatialWeights outlier_weights(coords_, outlier_config);
     
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < n; ++i) {
-        // Calculate spatial weights
-        Vec distances = distance_calc_->calculate_from_point(coords_, i);
-        Vec weights = kernel_->compute_weights(distances, outlier_bandwidth);
+        Vec weights = outlier_weights.compute_weights(i);
         weights(i) = 0.0;  // Exclude self
         
         // Only consider close neighbors
@@ -94,7 +98,8 @@ void GWPCA::detect_spatial_outliers() {
         // For each variable
         for (int j = 0; j < p; ++j) {
             double xi = data_(i, j);
-            Vec neighbor_data = data_.col(j)(neighbor_idx);
+            Mat neighbor_matrix = data_.rows(neighbor_idx);
+            Vec neighbor_data = neighbor_matrix.col(j);
             
             // Weighted mean of neighbors
             double neighbor_mean = arma::dot(neighbor_weights, neighbor_data);
@@ -161,11 +166,11 @@ void GWPCA::fit_local(int location) {
     
     // Store results
     result_->eigenvalues.row(location) = pca_result.eigenvalues.t();
+    result_->centers.row(location) = pca_result.center.t();
     
     int k = pca_config_->n_components;
     for (int j = 0; j < k; ++j) {
-        result_->loadings.tube(location, 0, location, data_.n_cols - 1).slice(j) = 
-            pca_result.eigenvectors.col(j);
+        result_->loadings.slice(j).row(location) = pca_result.eigenvectors.col(j).t();
     }
     
     // Calculate scores and variance explained
@@ -256,12 +261,16 @@ void GWPCA::finalize_fit() {
 // Parallel fitting
 void GWPCA::fit_parallel() {
     int n = data_.n_rows;
+    progress_counter_.store(0);
     
-    // Create worker
-    GWPCAWorker worker(*this, standardized_data_, coords_, progress_counter_);
-    
-    // Run in parallel
-    RcppParallel::parallelFor(0, n, worker);
+    #pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < n; ++i) {
+        fit_local(i);
+        int current = progress_counter_.fetch_add(1) + 1;
+        if (current % 100 == 0 || current == n) {
+            progress_->report(current, n);
+        }
+    }
 }
 
 // Create result object
@@ -290,15 +299,16 @@ Mat GWPCA::predict(const Mat& newdata, const Mat& newcoords) {
     }
     
     // For each new point
+    EuclideanDistance distance_calc;
     for (int i = 0; i < n_new; ++i) {
         // Find nearest neighbor in original data
-        Vec distances = distance_calc_->calculate_cross(newcoords.row(i), coords_).t();
+        Vec distances = distance_calc.calculate_cross(newcoords.row(i), coords_).t();
         arma::uword nearest = distances.index_min();
         
         // Use loadings from nearest point
         Mat local_loadings(data_.n_cols, k);
         for (int j = 0; j < k; ++j) {
-            local_loadings.col(j) = result_->loadings.tube(nearest, 0, nearest, data_.n_cols - 1).slice(j);
+            local_loadings.col(j) = result_->loadings.slice(j).row(nearest).t();
         }
         
         // Center using local center (approximate)
@@ -325,6 +335,8 @@ double GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
     int fold_size = n / n_folds;
     
     // Test each bandwidth
+    EuclideanDistance distance_calc;
+    
     #pragma omp parallel for
     for (int b = 0; b < n_bw; ++b) {
         double cv_error = 0.0;
@@ -362,7 +374,7 @@ double GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
                 // Simple reconstruction error for test data
                 for (size_t i = 0; i < test_idx.n_elem; ++i) {
                     // Find nearest training point
-                    Vec dists = distance_calc_->calculate_cross(coords.row(test_idx(i)), 
+                    Vec dists = distance_calc.calculate_cross(coords.row(test_idx(i)), 
                                                                coords.rows(train_idx)).t();
                     arma::uword nearest = dists.index_min();
                     
@@ -381,20 +393,6 @@ double GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
     // Find optimal bandwidth
     arma::uword opt_idx = cv_scores.index_min();
     return candidates(opt_idx);
-}
-
-Vec GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
-                               const Vec& candidates, const GWPCAConfig& config,
-                               int n_folds) {
-    // This returns the CV scores for all candidates
-    int n = data.n_rows;
-    int n_bw = candidates.n_elem;
-    Vec cv_scores(n_bw, arma::fill::zeros);
-    
-    // Implementation similar to above but returns all scores
-    // ... (similar to above method)
-    
-    return cv_scores;
 }
 
 double GWPCA::select_bandwidth_aic(const Mat& data, const Mat& coords,
@@ -429,18 +427,6 @@ double GWPCA::select_bandwidth_aic(const Mat& data, const Mat& coords,
     // Find optimal bandwidth
     arma::uword opt_idx = aic_scores.index_min();
     return candidates(opt_idx);
-}
-
-Vec GWPCA::select_bandwidth_aic(const Mat& data, const Mat& coords,
-                                const Vec& candidates, const GWPCAConfig& config) {
-    // This returns the AIC scores for all candidates
-    int n_bw = candidates.n_elem;
-    Vec aic_scores(n_bw);
-    
-    // Implementation similar to above but returns all scores
-    // ... (similar to above method)
-    
-    return aic_scores;
 }
 
 } // namespace gwmvt

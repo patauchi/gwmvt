@@ -4,20 +4,16 @@
 #include "../base/gw_method.h"
 #include "../base/robust_estimator.h"
 #include "../../core/algebra.h"
-#include <RcppParallel.h>
 #include <memory>
 #include <atomic>
 
 namespace gwmvt {
 
-// Forward declarations
-class GWPCAWorker;
-
 // Geographically Weighted Principal Component Analysis
 class GWPCA : public GWMethod {
 private:
     // Configuration
-    GWPCAConfig pca_config_;
+    std::shared_ptr<GWPCAConfig> pca_config_;
     
     // Results storage
     std::unique_ptr<GWPCAResult> result_;
@@ -32,9 +28,6 @@ private:
     Vec data_mean_;
     Vec data_sd_;
     Mat standardized_data_;
-    
-    // Friend class for parallel processing
-    friend class GWPCAWorker;
     
 protected:
     // Prepare for fitting
@@ -79,7 +72,7 @@ public:
     GWPCA(const Mat& data, const Mat& coords, const GWConfig& config);
     
     // Destructor
-    ~GWPCA() override = default;
+    ~GWPCA() override;
     
     // Get method name
     std::string get_method_name() const override { return "GWPCA"; }
@@ -99,35 +92,6 @@ public:
     
     static double select_bandwidth_aic(const Mat& data, const Mat& coords,
                                       const Vec& candidates, const GWPCAConfig& config);
-};
-
-// Parallel worker for GWPCA
-class GWPCAWorker : public RcppParallel::Worker {
-private:
-    GWPCA& gwpca_;
-    const Mat& data_;
-    const Mat& coords_;
-    std::atomic<int>& progress_counter_;
-    
-public:
-    // Constructor
-    GWPCAWorker(GWPCA& gwpca, const Mat& data, const Mat& coords,
-                std::atomic<int>& progress_counter)
-        : gwpca_(gwpca), data_(data), coords_(coords), 
-          progress_counter_(progress_counter) {}
-    
-    // Parallel operator
-    void operator()(std::size_t begin, std::size_t end) override {
-        for (std::size_t i = begin; i < end; ++i) {
-            gwpca_.fit_local(i);
-            
-            // Update progress
-            int current = progress_counter_.fetch_add(1) + 1;
-            if (current % 100 == 0 || current == data_.n_rows) {
-                gwpca_.progress_->report(current, data_.n_rows);
-            }
-        }
-    }
 };
 
 // Factory registration for GWPCA

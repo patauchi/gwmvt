@@ -4,12 +4,12 @@
 \name{gwmvt-package}
 \alias{gwmvt}
 \alias{gwmvt-package}
-\title{gwmvt: Geographically Weighted Multivariate Analysis Toolkit}
+\title{gwmvt: Geographically Weighted Multivariate Analysis}
 \description{
 High-performance implementation of geographically weighted multivariate analysis methods including GWPCA, GWCCA, GWPLS, and more. All computations are implemented in C++ with support for parallel processing. Core functions work directly with matrices for maximum flexibility and performance.
 }
 \author{
-\strong{Maintainer}: Your Name \email{your.email@example.com}
+\strong{Maintainer}: P.Joser Atauchi \email{patauchi@gmail.com}
 
 }
 \keyword{internal}

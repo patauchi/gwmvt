@@ -61,7 +61,11 @@ public:
                     
                     if (valid_idx.n_elem > 5) {
                         Vec valid_values = local_values(valid_idx);
-                        k = std::max(2.0, arma::as_scalar(arma::quantile(valid_values, 0.95)));
+                        arma::vec prob(1);
+                        prob(0) = 0.95;
+                        arma::vec quantiles = arma::quantile(valid_values, prob);
+                        double q95 = quantiles(0);
+                        k = std::max(2.0, q95);
                     } else {
                         k = 2.0;
                     }
@@ -116,7 +120,7 @@ public:
         int p = data.n_cols;
         
         RobustStats stats(p);
-        stats.center = arma::mean(data.each_row() % weights.t(), 0).t();
+        stats.center = weighted_mean(data, weights);
         
         Vec old_center = stats.center;
         
