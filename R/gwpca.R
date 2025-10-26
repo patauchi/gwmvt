@@ -20,6 +20,9 @@
 #'     \item "robpca" - ROBPCA based on projection pursuit
 #'   }
 #' @param use_correlation Logical, whether to use correlation matrix instead of covariance
+#' @param kernel Character string for spatial kernel: one of
+#'   c("gaussian","bisquare","exponential","tricube","boxcar","adaptive").
+#'   If "adaptive" is used, it behaves as gaussian with adaptive bandwidth.
 #' @param k Integer, number of components to retain (default: all)
 #' @param detect_outliers Logical, whether to detect spatial outliers first
 #' @param outlier_threshold Numeric, threshold for outlier detection (default: 2.5)
@@ -32,6 +35,8 @@
 #' @param parallel Logical, whether to use parallel processing
 #' @param n_threads Integer, number of threads to use (0 = auto)
 #' @param verbose Logical, whether to show progress
+#' @param adaptive_bandwidth Logical, use adaptive k-NN bandwidth per location
+#' @param adaptive_k Integer, neighbors for adaptive bandwidth (default: 30)
 #'
 #' @return A list of class 'gwpca' containing:
 #'   \item{eigenvalues}{Matrix (n x p) of eigenvalues at each location}
@@ -74,6 +79,7 @@ gwpca <- function(data,
                              "mve", "s_estimator", "mm_estimator",
                              "lof", "bacon", "spatial_depth", "robpca"),
                   use_correlation = FALSE,
+                  kernel = c("gaussian","bisquare","exponential","tricube","boxcar","adaptive"),
                   k = NULL,
                   detect_outliers = TRUE,
                   outlier_threshold = 2.5,
@@ -85,7 +91,9 @@ gwpca <- function(data,
                   robpca_k_max = 10,
                   parallel = TRUE,
                   n_threads = 0,
-                  verbose = FALSE) {
+                  verbose = FALSE,
+                  adaptive_bandwidth = FALSE,
+                  adaptive_k = 30) {
 
   # Input validation
   if (!is.matrix(data) && !is.data.frame(data)) {
@@ -113,8 +121,9 @@ gwpca <- function(data,
     stop("bandwidth must be positive")
   }
 
-  # Match method
+  # Match method and kernel
   method <- match.arg(method)
+  kernel <- match.arg(kernel)
 
   # Set k if not specified
   if (is.null(k)) {
@@ -141,7 +150,10 @@ gwpca <- function(data,
     robpca_k_max = as.integer(robpca_k_max),
     parallel = parallel,
     n_threads = as.integer(n_threads),
-    verbose = verbose
+    verbose = verbose,
+    kernel = kernel,
+    adaptive_bandwidth = adaptive_bandwidth || (kernel == "adaptive"),
+    adaptive_k = as.integer(adaptive_k)
   )
 
   # Add class
@@ -165,6 +177,11 @@ print.gwpca <- function(x, ...) {
   cat("Number of components retained:", x$n_components, "\n")
   cat("Bandwidth:", x$bandwidth, "\n")
   cat("Correlation-based:", x$use_correlation, "\n")
+  if (!is.null(x$kernel)) {
+    cat("Kernel:", x$kernel, "  Adaptive BW:", isTRUE(x$adaptive_bandwidth),
+        if (!is.null(x$adaptive_k)) paste0(" (k=", x$adaptive_k, ")") else "",
+        "\n")
+  }
 
   if (!is.null(x$spatial_outliers)) {
     n_outliers <- sum(x$spatial_outliers)
@@ -212,6 +229,7 @@ summary.gwpca <- function(object, ...) {
     n_components = object$n_components,
     bandwidth = object$bandwidth,
     use_correlation = object$use_correlation,
+    kernel = if (!is.null(object$kernel)) object$kernel else NULL,
     var_explained_mean = colMeans(object$var_explained, na.rm = TRUE),
     var_explained_sd = apply(object$var_explained, 2, stats::sd, na.rm = TRUE),
     eigenvalue_range = apply(object$eigenvalues, 2, range, na.rm = TRUE)
@@ -241,6 +259,9 @@ print.summary.gwpca <- function(x, ...) {
   cat("Number of components:", x$n_components, "\n")
   cat("Bandwidth:", x$bandwidth, "\n")
   cat("Correlation-based:", x$use_correlation, "\n")
+  if (!is.null(x$kernel)) {
+    cat("Kernel:", x$kernel, "\n")
+  }
 
   if (!is.null(x$n_outliers)) {
     cat("Spatial outliers:", x$n_outliers,

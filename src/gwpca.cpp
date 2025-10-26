@@ -77,7 +77,10 @@ List gwpca_cpp(const arma::mat& data,
                int robpca_k_max = 10,
                bool parallel = true,
                int n_threads = 0,
-               bool verbose = false) {
+               bool verbose = false,
+               std::string kernel = "gaussian",
+               bool adaptive_bandwidth = false,
+               int adaptive_k = 30) {
     
     int p = data.n_cols;
     int n_components = (k <= 0) ? p : std::min(k, p);
@@ -85,8 +88,25 @@ List gwpca_cpp(const arma::mat& data,
     // Configure core settings
     gwmvt::GWConfig config;
     config.bandwidth = bandwidth;
-    config.kernel_type = gwmvt::KernelType::GAUSSIAN;
-    config.adaptive_bandwidth = false;
+    // Kernel selection
+    try {
+        if (kernel == "gaussian") config.kernel_type = gwmvt::KernelType::GAUSSIAN;
+        else if (kernel == "bisquare") config.kernel_type = gwmvt::KernelType::BISQUARE;
+        else if (kernel == "exponential") config.kernel_type = gwmvt::KernelType::EXPONENTIAL;
+        else if (kernel == "tricube") config.kernel_type = gwmvt::KernelType::TRICUBE;
+        else if (kernel == "boxcar") config.kernel_type = gwmvt::KernelType::BOXCAR;
+        else if (kernel == "adaptive") {
+            // Alias for gaussian with adaptive bandwidth
+            config.kernel_type = gwmvt::KernelType::GAUSSIAN;
+            adaptive_bandwidth = true;
+        } else {
+            Rcpp::stop("Unknown kernel: %s", kernel);
+        }
+    } catch (...) {
+        Rcpp::stop("Failed to set kernel type");
+    }
+    config.adaptive_bandwidth = adaptive_bandwidth;
+    config.adaptive_k = adaptive_k;
     config.parallel_strategy = parallel ? gwmvt::ParallelStrategy::AUTO
                                         : gwmvt::ParallelStrategy::SEQUENTIAL;
     config.n_threads = n_threads;
@@ -140,7 +160,10 @@ List gwpca_cpp(const arma::mat& data,
         Named("method") = method,
         Named("use_correlation") = use_correlation,
         Named("n_components") = n_components,
-        Named("spatial_outliers") = pca_result->spatial_outliers
+        Named("spatial_outliers") = pca_result->spatial_outliers,
+        Named("kernel") = kernel,
+        Named("adaptive_bandwidth") = adaptive_bandwidth,
+        Named("adaptive_k") = adaptive_k
     );
     
     // Attach diagnostics

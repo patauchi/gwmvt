@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // gwpca_cpp
-List gwpca_cpp(const arma::mat& data, const arma::mat& coords, double bandwidth, std::string method, bool use_correlation, int k, bool detect_outliers, double outlier_threshold, double trim_prop, double h_fraction, int lof_k, double bacon_alpha, std::string depth_type, int robpca_k_max, bool parallel, int n_threads, bool verbose);
-RcppExport SEXP _gwmvt_gwpca_cpp(SEXP dataSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP, SEXP methodSEXP, SEXP use_correlationSEXP, SEXP kSEXP, SEXP detect_outliersSEXP, SEXP outlier_thresholdSEXP, SEXP trim_propSEXP, SEXP h_fractionSEXP, SEXP lof_kSEXP, SEXP bacon_alphaSEXP, SEXP depth_typeSEXP, SEXP robpca_k_maxSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP verboseSEXP) {
+List gwpca_cpp(const arma::mat& data, const arma::mat& coords, double bandwidth, std::string method, bool use_correlation, int k, bool detect_outliers, double outlier_threshold, double trim_prop, double h_fraction, int lof_k, double bacon_alpha, std::string depth_type, int robpca_k_max, bool parallel, int n_threads, bool verbose, std::string kernel, bool adaptive_bandwidth, int adaptive_k);
+RcppExport SEXP _gwmvt_gwpca_cpp(SEXP dataSEXP, SEXP coordsSEXP, SEXP bandwidthSEXP, SEXP methodSEXP, SEXP use_correlationSEXP, SEXP kSEXP, SEXP detect_outliersSEXP, SEXP outlier_thresholdSEXP, SEXP trim_propSEXP, SEXP h_fractionSEXP, SEXP lof_kSEXP, SEXP bacon_alphaSEXP, SEXP depth_typeSEXP, SEXP robpca_k_maxSEXP, SEXP parallelSEXP, SEXP n_threadsSEXP, SEXP verboseSEXP, SEXP kernelSEXP, SEXP adaptive_bandwidthSEXP, SEXP adaptive_kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -34,7 +34,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(gwpca_cpp(data, coords, bandwidth, method, use_correlation, k, detect_outliers, outlier_threshold, trim_prop, h_fraction, lof_k, bacon_alpha, depth_type, robpca_k_max, parallel, n_threads, verbose));
+    Rcpp::traits::input_parameter< std::string >::type kernel(kernelSEXP);
+    Rcpp::traits::input_parameter< bool >::type adaptive_bandwidth(adaptive_bandwidthSEXP);
+    Rcpp::traits::input_parameter< int >::type adaptive_k(adaptive_kSEXP);
+    rcpp_result_gen = Rcpp::wrap(gwpca_cpp(data, coords, bandwidth, method, use_correlation, k, detect_outliers, outlier_threshold, trim_prop, h_fraction, lof_k, bacon_alpha, depth_type, robpca_k_max, parallel, n_threads, verbose, kernel, adaptive_bandwidth, adaptive_k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -122,7 +125,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gwmvt_gwpca_cpp", (DL_FUNC) &_gwmvt_gwpca_cpp, 17},
+    {"_gwmvt_gwpca_cpp", (DL_FUNC) &_gwmvt_gwpca_cpp, 20},
     {"_gwmvt_detect_spatial_outliers_cpp", (DL_FUNC) &_gwmvt_detect_spatial_outliers_cpp, 4},
     {"_gwmvt_adaptive_bandwidth_nn", (DL_FUNC) &_gwmvt_adaptive_bandwidth_nn, 2},
     {"_gwmvt_morans_i", (DL_FUNC) &_gwmvt_morans_i, 3},

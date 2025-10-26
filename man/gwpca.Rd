@@ -11,6 +11,7 @@ gwpca(
   method = c("standard", "adaptive_huber", "adaptive_mcd", "spatial_trim", "mve",
     "s_estimator", "mm_estimator", "lof", "bacon", "spatial_depth", "robpca"),
   use_correlation = FALSE,
+  kernel = c("gaussian", "bisquare", "exponential", "tricube", "boxcar", "adaptive"),
   k = NULL,
   detect_outliers = TRUE,
   outlier_threshold = 2.5,
@@ -22,7 +23,9 @@ gwpca(
   robpca_k_max = 10,
   parallel = TRUE,
   n_threads = 0,
-  verbose = FALSE
+  verbose = FALSE,
+  adaptive_bandwidth = FALSE,
+  adaptive_k = 30
 )
 }
 \arguments{
@@ -49,6 +52,10 @@ gwpca(
 
 \item{use_correlation}{Logical, whether to use correlation matrix instead of covariance}
 
+\item{kernel}{Character string for spatial kernel: one of
+c("gaussian","bisquare","exponential","tricube","boxcar","adaptive").
+If "adaptive" is used, it behaves as gaussian with adaptive bandwidth.}
+
 \item{k}{Integer, number of components to retain (default: all)}
 
 \item{detect_outliers}{Logical, whether to detect spatial outliers first}
@@ -72,6 +79,10 @@ gwpca(
 \item{n_threads}{Integer, number of threads to use (0 = auto)}
 
 \item{verbose}{Logical, whether to show progress}
+
+\item{adaptive_bandwidth}{Logical, use adaptive k-NN bandwidth per location}
+
+\item{adaptive_k}{Integer, neighbors for adaptive bandwidth (default: 30)}
 }
 \value{
 A list of class 'gwpca' containing:

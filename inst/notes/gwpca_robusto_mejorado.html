@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Análisis Espacial Robusto">
+
+<title>GWPCA Robusto: Fundamentos Matemáticos y Algoritmos Detallados</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="gwpca_robusto_mejorado_files/libs/clipboard/clipboard.min.js"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/popper.min.js"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="gwpca_robusto_mejorado_files/libs/quarto-html/anchor.min.js"></script>
+<link href="gwpca_robusto_mejorado_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="gwpca_robusto_mejorado_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="gwpca_robusto_mejorado_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="gwpca_robusto_mejorado_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="gwpca_robusto_mejorado_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">GWPCA Robusto: Fundamentos Matemáticos y Algoritmos Detallados</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Análisis Espacial Robusto </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introducción" class="level1">
+<h1>Introducción</h1>
+<p>El Análisis de Componentes Principales Geográficamente Ponderado Robusto (Robust GWPCA) extiende el GWPCA clásico incorporando estimadores robustos que minimizan el efecto de valores atípicos en los análisis espaciales. Este documento proporciona una descripción matemática completa y algorítmica de cada método implementado.</p>
+<section id="qué-es-y-por-qué-importa" class="level2">
+<h2 class="anchored" data-anchor-id="qué-es-y-por-qué-importa">¿Qué es y por qué importa?</h2>
+<ul>
+<li>PCA resume la variabilidad multivariada en pocas direcciones ortogonales (componentes) que maximizan varianza.</li>
+<li>GWPCA repite esa idea localmente: alrededor de cada ubicación se estima una media y covarianza con pesos espaciales, y se calculan los componentes de ese vecindario.</li>
+<li>La versión robusta sustituye media/covarianza clásicos por alternativas con menor sensibilidad a outliers, evitando que pocas observaciones anómalas dominen la estructura local.</li>
+</ul>
+</section>
+<section id="resumen-intuitivo-en-1-minuto" class="level2">
+<h2 class="anchored" data-anchor-id="resumen-intuitivo-en-1-minuto">Resumen intuitivo (en 1 minuto)</h2>
+<ol type="1">
+<li>Cerca de cada punto del mapa, ponderamos más a los vecinos cercanos (kernel + ancho de banda). 2) Con esos datos locales y pesos, estimamos centro y dispersión con un método robusto (MCD, S/MM, Huber, ROBPCA, etc.). 3) Descomponemos la covarianza local para obtener componentes principales, sus scores y varianzas explicadas. 4) Repetimos en todas las ubicaciones para mapear cómo cambia la estructura multivariada en el espacio, con menor impacto de outliers.</li>
+</ol>
+</section>
+<section id="motivación" class="level2">
+<h2 class="anchored" data-anchor-id="motivación">Motivación</h2>
+<p>En análisis espaciales, los datos pueden contener: - <strong>Outliers globales</strong>: Observaciones extremas en el espacio multivariado - <strong>Outliers locales</strong>: Observaciones anómalas en contextos espaciales específicos - <strong>Contaminación espacial</strong>: Clusters de observaciones atípicas</p>
+<p>La robustez es crucial para obtener estimaciones confiables de la estructura de covarianza local.</p>
+</section>
+<section id="cómo-se-comporta-el-estimador-visión-general" class="level2">
+<h2 class="anchored" data-anchor-id="cómo-se-comporta-el-estimador-visión-general">Cómo se comporta el estimador (visión general)</h2>
+<ul>
+<li>En presencia de outliers aislados, los estimadores robustos mantienen estables la media/covarianza locales; los valores propios y loadings varían poco respecto a zonas “limpias”.</li>
+<li>Con contaminación moderada (10–30%), métodos de alto punto de ruptura (MCD/S/MM) preservan la orientación de los principales componentes, a costa de algo de eficiencia cuando no hay outliers.</li>
+<li>El ancho de banda regula un segundo equilibrio: ventanas pequeñas capturan heterogeneidad local pero son más variables; ventanas grandes suavizan más y reducen varianza, pero pueden mezclar patrones distintos.</li>
+<li>En regiones con clusters de outliers, enfoques tipo MCD/MM y ROBPCA suelen ser más estables que M-estimadores simples (p.&nbsp;ej., Huber) si no se acompañan de una buena inicialización.</li>
+</ul>
+</section>
+</section>
+<section id="gwpca-estándar-fundamentos" class="level1">
+<h1>GWPCA Estándar: Fundamentos</h1>
+<section id="definición-del-problema" class="level2">
+<h2 class="anchored" data-anchor-id="definición-del-problema">Definición del Problema</h2>
+<p>Dado un conjunto de datos multivariados espaciales: - Observaciones: <span class="math display">\[\mathbf{X} = \{x_1, x_2, ..., x_n\}\]</span> donde <span class="math display">\[x_k \in \mathbb{R}^p\]</span> - Ubicaciones espaciales: <span class="math display">\[\mathbf{S} = \{s_1, s_2, ..., s_n\}\]</span> donde <span class="math display">\[s_k \in \mathbb{R}^2\]</span> - Objetivo: Obtener componentes principales locales en cada ubicación <span class="math display">\[s_i\]</span></p>
+</section>
+<section id="algoritmo-del-gwpca-estándar" class="level2">
+<h2 class="anchored" data-anchor-id="algoritmo-del-gwpca-estándar">Algoritmo del GWPCA Estándar</h2>
+<section id="intuición-rápida" class="level3">
+<h3 class="anchored" data-anchor-id="intuición-rápida">Intuición rápida</h3>
+<ul>
+<li>Damos más peso a las observaciones cercanas a la ubicación focal.</li>
+<li>Calculamos una media y covarianza locales ponderadas y hacemos PCA sobre esa covarianza.</li>
+<li>Al desplazar la ubicación focal por el mapa, los componentes y su varianza explicada cambian suavemente.</li>
+</ul>
+</section>
+<section id="paso-1-cálculo-de-pesos-espaciales" class="level3">
+<h3 class="anchored" data-anchor-id="paso-1-cálculo-de-pesos-espaciales">Paso 1: Cálculo de Pesos Espaciales</h3>
+<p>Para cada ubicación focal <span class="math display">\[s_i\]</span>, calculamos los pesos espaciales usando una función kernel:</p>
+<p><strong>Kernel Gaussiano (más común):</strong> <span class="math display">\[w_k(s_i) = \exp\left(-\frac{d(s_i, s_k)^2}{2h^2}\right)\]</span></p>
+<p><strong>Kernel Bisquare:</strong> <span class="math display">\[w_k(s_i) = \begin{cases}
+\left(1 - \left(\frac{d(s_i, s_k)}{h}\right)^2\right)^2 &amp; \text{si } d(s_i, s_k) &lt; h \\
+0 &amp; \text{en otro caso}
+\end{cases}\]</span></p>
+<p>donde: - <span class="math display">\[d(s_i, s_k)\]</span> es la distancia euclidiana entre ubicaciones - <span class="math display">\[h\]</span> es el ancho de banda (bandwidth)</p>
+<p>Notas prácticas: - Anchos de banda adaptativos (k vecinos más cercanos) tienden a ser más estables cuando la densidad de puntos varía en el espacio. - Kernels compactos (bisquare) limitan la influencia a un radio finito; kernels suaves (gaussiano) evitan discontinuidades en bordes.</p>
+</section>
+<section id="paso-2-estimación-de-la-media-local-ponderada" class="level3">
+<h3 class="anchored" data-anchor-id="paso-2-estimación-de-la-media-local-ponderada">Paso 2: Estimación de la Media Local Ponderada</h3>
+<p>La media local en la ubicación <span class="math display">\[s_i\]</span> se calcula como:</p>
+<p><span class="math display">\[\bar{x}(s_i) = \frac{\sum_{k=1}^{n} w_k(s_i) \cdot x_k}{\sum_{k=1}^{n} w_k(s_i)}\]</span></p>
+<p><strong>Algoritmo:</strong></p>
+<pre><code>1. Inicializar: media_local = vector_cero(p)
+2. suma_pesos = 0
+3. Para cada observación k = 1 to n:
+   a. Calcular peso w_k(s_i)
+   b. media_local += w_k(s_i) * x_k
+   c. suma_pesos += w_k(s_i)
+4. media_local = media_local / suma_pesos</code></pre>
+</section>
+<section id="paso-3-estimación-de-la-matriz-de-covarianza-local" class="level3">
+<h3 class="anchored" data-anchor-id="paso-3-estimación-de-la-matriz-de-covarianza-local">Paso 3: Estimación de la Matriz de Covarianza Local</h3>
+<p>La matriz de covarianza ponderada en <span class="math display">\[s_i\]</span>:</p>
+<p><span class="math display">\[\Sigma(s_i) = \frac{\sum_{k=1}^{n} w_k(s_i) \cdot (x_k - \bar{x}(s_i))(x_k - \bar{x}(s_i))^T}{\sum_{k=1}^{n} w_k(s_i)}\]</span></p>
+<p><strong>Algoritmo:</strong></p>
+<pre><code>1. Centrar los datos: z_k = x_k - media_local
+2. Inicializar: Sigma = matriz_cero(p, p)
+3. Para cada observación k = 1 to n:
+   a. Sigma += w_k(s_i) * z_k * z_k^T
+4. Sigma = Sigma / suma_pesos</code></pre>
+</section>
+<section id="paso-4-descomposición-en-valores-propios" class="level3">
+<h3 class="anchored" data-anchor-id="paso-4-descomposición-en-valores-propios">Paso 4: Descomposición en Valores Propios</h3>
+<p><span class="math display">\[\Sigma(s_i) \cdot \phi_j(s_i) = \lambda_j(s_i) \cdot \phi_j(s_i)\]</span></p>
+<p>donde: - <span class="math display">\[\lambda_j(s_i)\]</span>: j-ésimo valor propio (varianza del j-ésimo componente) - <span class="math display">\[\phi_j(s_i)\]</span>: j-ésimo vector propio (loadings del j-ésimo componente)</p>
+</section>
+<section id="paso-5-cálculo-de-scores-locales" class="level3">
+<h3 class="anchored" data-anchor-id="paso-5-cálculo-de-scores-locales">Paso 5: Cálculo de Scores Locales</h3>
+<p>Para cada observación <span class="math display">\[x_k\]</span>, el score en el j-ésimo componente:</p>
+<p><span class="math display">\[score_{jk}(s_i) = (x_k - \bar{x}(s_i))^T \cdot \phi_j(s_i)\]</span></p>
+<p>Interpretación: los scores son las coordenadas de cada observación respecto a las direcciones principales locales. Mapear su varianza o los loadings permite entender qué variables “explican” cada componente en cada zona.</p>
+</section>
+<section id="formulación-matemática-y-conexión-con-el-algoritmo" class="level3">
+<h3 class="anchored" data-anchor-id="formulación-matemática-y-conexión-con-el-algoritmo">Formulación matemática y conexión con el algoritmo</h3>
+<ul>
+<li>Rayleigh: los loadings locales (_j(s_i)) maximizan (R()= ^T(s_i)) sujeto a (||=1). La solución son autovectores de ((s_i)).</li>
+<li>Reconstrucción: el error cuadrático kernel-ponderado (_k w_k(s_i)|x_k-{x}(s_i)-P_m(x_k-{x}(s_i))|^2) se minimiza con el subespacio generado por los m autovectores principales locales.</li>
+<li>Local likelihood: ((s_i)) es el estimador de segundo momento de máxima verosimilitud bajo Normalidad con pesos kernel fijos; la versión robusta reemplaza dicho estimador por su análogo robusto.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="gwpca-robusto-marco-teórico" class="level1">
+<h1>GWPCA Robusto: Marco Teórico</h1>
+<section id="principio-general" class="level2">
+<h2 class="anchored" data-anchor-id="principio-general">Principio General</h2>
+<p>El GWPCA Robusto reemplaza los estimadores clásicos por estimadores robustos:</p>
+<p><span class="math display">\[(\tilde{\mu}(s_i), \tilde{\Sigma}(s_i)) = \mathcal{R}\left(\{(x_k, w_k(s_i))\}_{k=1}^n\right)\]</span></p>
+<p>donde <span class="math display">\[\mathcal{R}\]</span> es un procedimiento de estimación robusta que debe: 1. Incorporar los pesos espaciales <span class="math display">\[w_k(s_i)\]</span> 2. Ser resistente a outliers 3. Mantener propiedades deseables (equivarianza afín, eficiencia)</p>
+<section id="qué-cambia-respecto-al-gwpca-clásico" class="level3">
+<h3 class="anchored" data-anchor-id="qué-cambia-respecto-al-gwpca-clásico">Qué cambia respecto al GWPCA clásico</h3>
+<ul>
+<li>Reemplazamos la media/covarianza locales por versiones robustas que reducen la influencia de observaciones extremas.</li>
+<li>Los pesos espaciales siguen presentes; se combinan con pesos de robustez (derivados de distancias robustas, LOF, profundidad, etc.).</li>
+<li>El resultado es un conjunto de componentes locales menos sensibles a contaminación, con un balance sesgo–varianza controlado por el método y sus parámetros.</li>
+</ul>
+</section>
+<section id="implementación-genérica-con-pesos-espaciales" class="level3">
+<h3 class="anchored" data-anchor-id="implementación-genérica-con-pesos-espaciales">Implementación genérica con pesos espaciales</h3>
+<p>Dado un método robusto que define pesos de robustez (w^{rob}_k) a partir de distancias robustas, la combinación natural es (w^{tot}_k = w^{esp}_k, w^{rob}_k). Las ecuaciones de estimación toman la forma [ = , _k w^{tot}_k (x_k-)(x_k-)^T,] con factores de consistencia para que, bajo Normalidad y sin outliers, (E[] = ). Esta receta traduce directamente las formulaciones matemáticas a implementaciones por ventana espacial.</p>
+</section>
+<section id="comportamiento-del-estimador" class="level3">
+<h3 class="anchored" data-anchor-id="comportamiento-del-estimador">Comportamiento del estimador</h3>
+<p>En términos prácticos, los estimadores robustos de centro y dispersión local atenúan la influencia de observaciones extremas, de modo que los valores propios y las direcciones principales varían de forma suave y coherente con el patrón dominante. Ante contaminación baja, su rendimiento es cercano al clásico (ligero aumento de varianza); ante contaminación moderada/alta, evitan sesgos fuertes y rotaciones erráticas de los componentes. La ventana espacial añade un segundo efecto de suavizado: a menor ancho de banda, más detalle local pero más variabilidad; a mayor ancho de banda, menor varianza pero mayor mezcla de estructuras vecinas. Elegir el método (MCD/S/MM/Huber/ROBPCA) y sus parámetros ajusta explícitamente este compromiso.</p>
+</section>
+</section>
+<section id="medidas-de-robustez" class="level2">
+<h2 class="anchored" data-anchor-id="medidas-de-robustez">Medidas de Robustez</h2>
+<section id="punto-de-ruptura-breakdown-point" class="level3">
+<h3 class="anchored" data-anchor-id="punto-de-ruptura-breakdown-point">Punto de Ruptura (Breakdown Point)</h3>
+<p>El punto de ruptura <span class="math display">\[\epsilon^*\]</span> es la proporción máxima de contaminación que un estimador puede tolerar:</p>
+<p><span class="math display">\[\epsilon^* = \max\left\{\epsilon : \sup_{X_\epsilon} \|\hat{\theta}(X_\epsilon) - \theta_0\| &lt; \infty\right\}\]</span></p>
+</section>
+<section id="función-de-influencia" class="level3">
+<h3 class="anchored" data-anchor-id="función-de-influencia">Función de Influencia</h3>
+<p>Mide la sensibilidad del estimador a una observación individual:</p>
+<p><span class="math display">\[IF(x; \hat{\theta}, F) = \lim_{\epsilon \to 0} \frac{\hat{\theta}((1-\epsilon)F + \epsilon\delta_x) - \hat{\theta}(F)}{\epsilon}\]</span></p>
+<p>Comentario práctico: funciones de influencia acotadas implican que el impacto de una observación individual no crece sin límite. Puntos de ruptura altos (~50%) permiten tolerar grandes proporciones de contaminación, pero a menudo con menor eficiencia cuando los datos son limpios.</p>
+</section>
+<section id="equivarianza-afín" class="level3">
+<h3 class="anchored" data-anchor-id="equivarianza-afín">Equivarianza afín</h3>
+<p>Un estimador (T) de (μ, Σ) es equivariante afín si para cualquier transformación no singular (A) y vector (b): (T(AX+b) = (A,+b,; A,,A^T)). Esta propiedad garantiza que los componentes principales (direcciones y varianzas) se transforman correctamente bajo cambios lineales de escala, rotación y sesgo, algo esencial en PCA/GWPCA.</p>
+</section>
+</section>
+</section>
+<section id="estimadores-robustos-detallados" class="level1">
+<h1>Estimadores Robustos Detallados</h1>
+<section id="m-estimador-de-huber" class="level2">
+<h2 class="anchored" data-anchor-id="m-estimador-de-huber">3.1. M-Estimador de Huber</h2>
+<section id="fundamento-teórico" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico">Fundamento Teórico</h3>
+<p>Los M-estimadores minimizan una función objetivo robusta:</p>
+<p><span class="math display">\[(\hat{\mu}, \hat{\Sigma}) = \arg\min_{\mu, \Sigma} \sum_{k=1}^n w_k(s_i) \cdot \rho\left(\frac{\|x_k - \mu\|_{\Sigma^{-1}}}{\sigma}\right)\]</span></p>
+<p>donde <span class="math display">\[\rho\]</span> es la función de pérdida de Huber:</p>
+<p><span class="math display">\[\rho_c(u) = \begin{cases}
+\frac{1}{2}u^2 &amp; \text{si } |u| \leq c \\
+c|u| - \frac{1}{2}c^2 &amp; \text{si } |u| &gt; c
+\end{cases}\]</span></p>
+<section id="ecuaciones-de-estimación-modelo-elíptico" class="level4">
+<h4 class="anchored" data-anchor-id="ecuaciones-de-estimación-modelo-elíptico">Ecuaciones de estimación (modelo elíptico)</h4>
+<p>Bajo un modelo elíptico para X con centro μ y dispersión Σ, y distancias robustas (d_k^2 = (x_k-)<sup>T</sup>{-1}(x_k-)), las condiciones de primer orden implican ecuaciones de tipo ponderado:</p>
+<ul>
+<li>Para la localización: (_k w_k^{esp} , (d_k/),(x_k-) = 0), con ((t)= (t)/t).</li>
+<li>Para la dispersión: (= _k w_k^{esp} , u(d_k/),(x_k-)(x_k-)^T), con (u(t) = (1, c<sup>2/t</sup>2)) en Huber, y () factor de consistencia para Normalidad (corrige sesgo: (=E[u(^2_p)])).</li>
+</ul>
+<p>Estas ecuaciones llevan directamente a un esquema IRWLS donde () y (u) definen los pesos iterativos.</p>
+</section>
+</section>
+<section id="función-de-influencia-ψ-función" class="level3">
+<h3 class="anchored" data-anchor-id="función-de-influencia-ψ-función">Función de Influencia (ψ-función)</h3>
+<p>La derivada de <span class="math display">\[\rho\]</span> define la función de influencia:</p>
+<p><span class="math display">\[\psi_c(u) = \frac{\partial \rho_c(u)}{\partial u} = \begin{cases}
+u &amp; \text{si } |u| \leq c \\
+c \cdot \text{sign}(u) &amp; \text{si } |u| &gt; c
+\end{cases}\]</span></p>
+<p>Intuición y comportamiento: - Para residuos pequeños actúa como PCA clásico (cuadrático); para grandes, recorta la influencia a un nivel constante. - Mejora la estabilidad ante unos pocos outliers, pero su punto de ruptura es bajo si se usa sin una inicialización robusta de escala/centro. - Recomendable con baja–moderada contaminación o como refinamiento tras un arranque robusto (MCD/S).</p>
+<section id="propiedades" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades">Propiedades</h4>
+<ul>
+<li>Equivarianza afín: sí, si las ecuaciones se formulan para localización y dispersión conjuntamente.</li>
+<li>Punto de ruptura: bajo sin inicialización robusta; mejora con arranques MCD/S.</li>
+<li>IF: acotada (por la forma lineal–constante de ψ de Huber), lo que limita la influencia individual.</li>
+<li>Eficiencia asintótica: ajustable con c; típicamente c=1.345 ≈ 95% bajo Normal.</li>
+</ul>
+</section>
+<section id="de-las-matemáticas-al-algoritmo-con-pesos-espaciales" class="level4">
+<h4 class="anchored" data-anchor-id="de-las-matemáticas-al-algoritmo-con-pesos-espaciales">De las matemáticas al algoritmo (con pesos espaciales)</h4>
+<ul>
+<li>Reemplace sumas () por sumas ponderadas (w_k^{esp}).</li>
+<li>Use () para actualizar μ y (u) para actualizar Σ; incluya () para consistencia.</li>
+<li>Regularice Σ si es necesario (ridge/shrinkage) antes de descomponer en autovalores.</li>
+</ul>
+</section>
+</section>
+<section id="algoritmo-irwls-iteratively-reweighted-least-squares" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-irwls-iteratively-reweighted-least-squares">Algoritmo IRWLS (Iteratively Reweighted Least Squares)</h3>
+<p><strong>Paso 1: Inicialización</strong></p>
+<pre><code>1. Estimar media inicial: μ⁰ = mediana_espacial_ponderada(X, w)
+2. Estimar Σ⁰ = MAD_ponderado(X, w) * I_p
+3. Fijar c = 1.345 (95% eficiencia en normal)
+4. contador = 0, ε = 10^-6</code></pre>
+<p><strong>Paso 2: Iteración hasta convergencia</strong></p>
+<pre><code>Repetir hasta convergencia:
+  1. Calcular distancias de Mahalanobis:
+     d_k = sqrt((x_k - μ^t)^T * (Σ^t)^(-1) * (x_k - μ^t))
+  
+  2. Calcular pesos de Huber:
+     v_k = ψ_c(d_k) / d_k = min(1, c/d_k)
+  
+  3. Actualizar media:
+     μ^(t+1) = Σ(w_k * v_k * x_k) / Σ(w_k * v_k)
+  
+  4. Actualizar covarianza:
+     Σ^(t+1) = Σ(w_k * v_k * (x_k - μ^(t+1))(x_k - μ^(t+1))^T) / Σ(w_k)
+  
+  5. Verificar convergencia:
+     Si ||μ^(t+1) - μ^t|| &lt; ε y ||Σ^(t+1) - Σ^t||_F &lt; ε:
+        Terminar
+  
+  6. t = t + 1</code></pre>
+</section>
+</section>
+<section id="determinante-de-covarianza-mínima-mcd" class="level2">
+<h2 class="anchored" data-anchor-id="determinante-de-covarianza-mínima-mcd">3.2. Determinante de Covarianza Mínima (MCD)</h2>
+<section id="fundamento-teórico-1" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-1">Fundamento Teórico</h3>
+<p>El MCD busca el subconjunto <span class="math display">\[H \subset \{1,...,n\}\]</span> con <span class="math display">\[|H| = h\]</span> que minimiza:</p>
+<p><span class="math display">\[\det\left(\Sigma_H\right)\]</span></p>
+<p>donde <span class="math display">\[\Sigma_H\]</span> es la matriz de covarianza del subconjunto <span class="math display">\[H\]</span>.</p>
+<section id="parámetros-y-propiedades" class="level4">
+<h4 class="anchored" data-anchor-id="parámetros-y-propiedades">Parámetros y propiedades</h4>
+<ul>
+<li>Tamaño del subconjunto: <span class="math display">\[h = \lfloor(n+p+1)/2\rfloor\]</span> (máximo punto de ruptura)</li>
+<li>Punto de ruptura: <span class="math display">\[\epsilon^* = (n-h)/n \approx 0.5\]</span></li>
+<li>Equivarianza afín: sí (aplica a transformaciones lineales no singulares).</li>
+<li>Consistencia: requiere factores de corrección por muestra finita y por Normalidad.</li>
+<li>Eficiencia: mejora mediante el paso de reponderación (reweighted MCD).</li>
+</ul>
+</section>
+</section>
+<section id="algoritmo-fast-mcd" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-fast-mcd">Algoritmo Fast-MCD</h3>
+<p>Intuición y comportamiento: - Busca el subconjunto de h observaciones más “concentradas” y estima media/covarianza con ellas. - Alto punto de ruptura (≈50%) y buena detección de outliers, incluso en clusters; menor eficiencia en datos perfectamente gaussianos. - Muy útil como estimación inicial para MM o como base en ventanas con contaminación heterogénea.</p>
+<p><strong>Paso 1: Inicialización con Múltiples Arranques</strong></p>
+<pre><code>Para j = 1 to n_starts (típicamente 500):
+  1. Seleccionar aleatoriamente p+1 observaciones
+  2. Calcular μ₀ y Σ₀ de este subconjunto
+  3. Si det(Σ₀) = 0, reintentar
+  4. Guardar como candidato inicial</code></pre>
+<p><strong>Paso 2: C-Steps (Concentration Steps)</strong></p>
+<pre><code>Para cada candidato inicial:
+  Repetir hasta convergencia:
+    1. Calcular distancias de Mahalanobis:
+       d²_k = (x_k - μ_old)^T * Σ_old^(-1) * (x_k - μ_old)
+    
+    2. Ordenar: d²_(1) ≤ d²_(2) ≤ ... ≤ d²_(n)
+    
+    3. Seleccionar H = {índices de las h menores distancias}
+    
+    4. Actualizar estimadores con ponderación espacial:
+       μ_new = Σ(k∈H) w_k * x_k / Σ(k∈H) w_k
+       Σ_new = Σ(k∈H) w_k * (x_k - μ_new)(x_k - μ_new)^T / Σ(k∈H) w_k
+    
+    5. Si det(Σ_new) ≥ det(Σ_old):
+       Convergencia alcanzada
+    
+    6. μ_old = μ_new, Σ_old = Σ_new</code></pre>
+<p><strong>Paso 3: Refinamiento</strong></p>
+<pre><code>1. Seleccionar el mejor resultado (menor determinante)
+2. Aplicar paso de reponderación:
+   a. Calcular d²_k con estimadores finales
+   b. Definir pesos: w_rob,k = 1 si d²_k ≤ χ²_p,0.975, 0 sino
+   c. Recalcular μ y Σ con estos pesos</code></pre>
+<section id="de-las-matemáticas-al-algoritmo" class="level4">
+<h4 class="anchored" data-anchor-id="de-las-matemáticas-al-algoritmo">De las matemáticas al algoritmo</h4>
+<ul>
+<li>Problema discreto: minimizar det(Σ_H) sobre subconjuntos de tamaño h; se aproxima con C-steps que garantizan no empeorar el determinante.</li>
+<li>Pesos espaciales: dentro de H, reemplace medias y covarianzas por versiones ponderadas por (w_k^{esp}).</li>
+<li>Consistencia: aplique factor de escala (c_{n,p,h}) para que E[Σ] ≈ Σ_0 bajo Normal.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="elipsoide-de-volumen-mínimo-mve" class="level2">
+<h2 class="anchored" data-anchor-id="elipsoide-de-volumen-mínimo-mve">3.3. Elipsoide de Volumen Mínimo (MVE)</h2>
+<section id="fundamento-teórico-2" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-2">Fundamento Teórico</h3>
+<p>El MVE encuentra el elipsoide de mínimo volumen que contiene al menos h observaciones:</p>
+<p><span class="math display">\[\min_{\mu, \Sigma} \det(\Sigma) \text{ sujeto a } |\{k : (x_k-\mu)^T\Sigma^{-1}(x_k-\mu) \leq c^2\}| \geq h\]</span></p>
+<section id="propiedades-y-relación-con-mcd" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-y-relación-con-mcd">Propiedades y relación con MCD</h4>
+<p><span class="math display">\[\text{MVE}(\Sigma) = c_p \cdot \text{MCD}(\Sigma)\]</span></p>
+<p>donde <span class="math display">\[c_p\]</span> es un factor de corrección dimensional.</p>
+<ul>
+<li>Alto punto de ruptura (≈50%) pero menor eficiencia que MCD.</li>
+<li>Suele usarse como arranque; el reweighting es clave para eficiencia.</li>
+</ul>
+</section>
+</section>
+<section id="algoritmo-de-búsqueda-aleatoria" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-de-búsqueda-aleatoria">Algoritmo de Búsqueda Aleatoria</h3>
+<p><strong>Paso 1: Muestreo Exhaustivo</strong></p>
+<pre><code>Para j = 1 to n_samples (típicamente 3000):
+  1. Seleccionar aleatoriamente p+1 puntos
+  2. Calcular el elipsoide mínimo que los contiene:
+     a. Centro: μ_j = media(puntos seleccionados)
+     b. Forma: Σ_j = cov(puntos seleccionados)
+  
+  3. Escalar el elipsoide hasta contener h puntos:
+     a. Calcular todas las distancias d²_k
+     b. Encontrar c_j tal que exactamente h puntos cumplan d²_k ≤ c²_j
+     c. Σ_j = c²_j * Σ_j
+  
+  4. Calcular volumen: V_j = det(Σ_j)^(1/2)</code></pre>
+<p><strong>Paso 2: Selección y Refinamiento</strong></p>
+<pre><code>1. Seleccionar j* = argmin_j V_j
+2. μ_MVE = μ_j*, Σ_MVE = Σ_j*
+3. Aplicar corrección de sesgo finito:
+   Σ_MVE = κ_p,n * Σ_MVE
+   donde κ_p,n es el factor de corrección pequeña muestra</code></pre>
+<section id="de-las-matemáticas-al-algoritmo-1" class="level4">
+<h4 class="anchored" data-anchor-id="de-las-matemáticas-al-algoritmo-1">De las matemáticas al algoritmo</h4>
+<ul>
+<li>Se busca el elipsoide de mínimo volumen que cubra al menos h puntos; en la práctica se exploran muestras pequeñas (p+1) y se expanden para cubrir h observaciones por distancia elíptica.</li>
+<li>Ponderación espacial: compute distancias y conteos usando (w_k^{esp}) como multiplicadores en medias/covarianzas.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="s-estimadores" class="level2">
+<h2 class="anchored" data-anchor-id="s-estimadores">3.4. S-Estimadores</h2>
+<section id="fundamento-teórico-3" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-3">Fundamento Teórico</h3>
+<p>Los S-estimadores minimizan una medida de dispersión robusta:</p>
+<p><span class="math display">\[(\hat{\mu}, \hat{\Sigma}) = \arg\min_{\mu,\Sigma} s(\{d_k(\mu,\Sigma)\}_{k=1}^n)\]</span></p>
+<p>donde <span class="math display">\[s\]</span> satisface:</p>
+<p><span class="math display">\[\frac{1}{n} \sum_{k=1}^n \rho\left(\frac{d_k}{s}\right) = b_0\]</span></p>
+<p>con <span class="math display">\[b_0 = E_{\Phi}[\rho(||Z||)]\]</span> para <span class="math display">\[Z \sim N(0,I_p)\]</span>.</p>
+<section id="ecuaciones-de-estimación" class="level4">
+<h4 class="anchored" data-anchor-id="ecuaciones-de-estimación">Ecuaciones de estimación</h4>
+<ul>
+<li>Dadas (s) y (), los pesos (w_k = (d_k/s)/(d_k/s)) inducen:
+<ul>
+<li>(_k w_k^{esp} w_k (x_k-) = 0)</li>
+<li>(_k w_k^{esp} w_k (x_k-)(x_k-)^T) con restricción (||=1) o ajuste de escala separado.</li>
+</ul></li>
+<li>La escala s se determina resolviendo la ecuación de normalización de () para alcanzar el valor objetivo (b_0) (consistencia y breakdown deseado).</li>
+</ul>
+</section>
+</section>
+<section id="función-ρ-de-tukey-bisquare" class="level3">
+<h3 class="anchored" data-anchor-id="función-ρ-de-tukey-bisquare">Función ρ de Tukey (Bisquare)</h3>
+<p><span class="math display">\[\rho_c(u) = \begin{cases}
+\frac{u^2}{2} - \frac{u^4}{2c^2} + \frac{u^6}{6c^4} &amp; \text{si } |u| \leq c \\
+\frac{c^2}{6} &amp; \text{si } |u| &gt; c
+\end{cases}\]</span></p>
+</section>
+<section id="algoritmo-de-ruppert" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-de-ruppert">Algoritmo de Ruppert</h3>
+<p><strong>Paso 1: Inicialización con MCD</strong></p>
+<pre><code>1. Obtener (μ₀, Σ₀) = MCD(X, h=⌊0.5n⌋)
+2. Fijar c = 1.548 (50% punto de ruptura)
+3. Calcular b₀ = 0.5 (para 50% punto de ruptura)</code></pre>
+<p><strong>Paso 2: Iteración para la Escala</strong></p>
+<pre><code>Repetir hasta convergencia:
+  1. Calcular distancias: d_k = ||x_k - μ||_Σ
+  
+  2. Resolver para s:
+     (1/n) Σ ρ(d_k/s) = b₀
+     Usando Newton-Raphson:
+     s^(t+1) = s^t - [f(s^t) - b₀] / f'(s^t)
+     donde f(s) = (1/n) Σ ρ(d_k/s)
+  
+  3. Calcular pesos:
+     w_k = ψ(d_k/s) / (d_k/s)
+     donde ψ es la derivada de ρ
+  
+  4. Actualizar estimadores con ponderación espacial:
+     μ = Σ(w_k * w_espacial_k * x_k) / Σ(w_k * w_espacial_k)
+     Σ = s² * Σ(w_k * w_espacial_k * u_k * u_k^T) / Σ(w_k * w_espacial_k)
+     donde u_k = (x_k - μ) / s</code></pre>
+<section id="propiedades-1" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-1">Propiedades</h4>
+<ul>
+<li>Equivarianza afín: sí.</li>
+<li>Punto de ruptura: hasta 50% con () bisquare y elección adecuada de (b_0).</li>
+<li>IF: acotada (ψ redescendiente), robustez elevada ante outliers severos.</li>
+<li>Eficiencia: depende de c; típicamente c≈1.548 para alto breakdown, pudiendo refinarse luego (MM).</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="mm-estimadores" class="level2">
+<h2 class="anchored" data-anchor-id="mm-estimadores">3.5. MM-Estimadores</h2>
+<section id="fundamento-teórico-4" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-4">Fundamento Teórico</h3>
+<p>Proceso en dos etapas que combina robustez y eficiencia:</p>
+<ol type="1">
+<li><strong>Etapa S</strong>: Obtener estimador inicial de alto punto de ruptura</li>
+<li><strong>Etapa M</strong>: Refinar para mayor eficiencia manteniendo la escala fija</li>
+</ol>
+</section>
+<section id="funciones-ρ-diferentes" class="level3">
+<h3 class="anchored" data-anchor-id="funciones-ρ-diferentes">Funciones ρ Diferentes</h3>
+<ul>
+<li><strong>Etapa S</strong>: <span class="math display">\[\rho_1\]</span> con <span class="math display">\[c_1 = 1.548\]</span> (50% punto de ruptura)</li>
+<li><strong>Etapa M</strong>: <span class="math display">\[\rho_2\]</span> con <span class="math display">\[c_2 = 4.685\]</span> (95% eficiencia)</li>
+</ul>
+</section>
+<section id="algoritmo-mm-completo" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-mm-completo">Algoritmo MM Completo</h3>
+<p>Intuición y comportamiento: - Hereda el alto punto de ruptura de la etapa S y logra alta eficiencia con la etapa M. - Estable frente a outliers moderados/altos, manteniendo buena precisión cuando los datos son casi gaussianos. - Suele ser la opción por defecto cuando el costo computacional es aceptable.</p>
+<section id="ecuaciones-de-estimación-etapa-m-con-escala-fija" class="level4">
+<h4 class="anchored" data-anchor-id="ecuaciones-de-estimación-etapa-m-con-escala-fija">Ecuaciones de estimación (etapa M con escala fija)</h4>
+<ul>
+<li>Con (s_{final}) fijo y ψ2, los pesos (w_k = <em>2(d_k/s</em>{final})/(d_k/s_{final})) definen:
+<ul>
+<li>(_k w_k^{esp} w_k (x_k-)=0)</li>
+<li>(_k w_k^{esp} v_k (x_k-)(x_k-)^T), con (v_k = w_k [<em>2(d_k/s</em>{final})]^2) u otros esquemas equivalentes para consistencia.</li>
+</ul></li>
+</ul>
+</section>
+<section id="propiedades-2" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-2">Propiedades</h4>
+<ul>
+<li>Equivarianza afín: sí.</li>
+<li>Punto de ruptura: el de la etapa S (hasta 50%).</li>
+<li>Eficiencia: ajustable con (c_2) (p.&nbsp;ej., 4.685 ≈ 95% bajo Normal).</li>
+</ul>
+<p><strong>Etapa 1: S-Estimación</strong></p>
+<pre><code>1. Obtener (μ_S, Σ_S, s_S) usando S-estimador
+2. Fijar la escala: s_final = s_S</code></pre>
+<p><strong>Etapa 2: M-Estimación con Escala Fija</strong></p>
+<pre><code>Inicializar: μ⁰ = μ_S, Σ⁰ = Σ_S
+Repetir hasta convergencia:
+  1. Calcular distancias escaladas:
+     d_k = ||x_k - μ^t||_Σ^t / s_final
+  
+  2. Calcular pesos MM:
+     w_k = ψ₂(d_k) / d_k
+     donde ψ₂ usa c₂ = 4.685
+  
+  3. Actualizar con ponderación espacial:
+     μ^(t+1) = Σ(w_k * w_espacial_k * x_k) / Σ(w_k * w_espacial_k)
+     
+  4. Para la covarianza, usar pesos modificados:
+     v_k = w_k * [ψ₂(d_k)]²
+     Σ^(t+1) = Σ(v_k * w_espacial_k * (x_k - μ^(t+1))(x_k - μ^(t+1))^T) / Σ(v_k * w_espacial_k)
+  
+  5. Verificar convergencia</code></pre>
+</section>
+</section>
+</section>
+<section id="bacon-blocked-adaptive-computationally-efficient-outlier-nominators" class="level2">
+<h2 class="anchored" data-anchor-id="bacon-blocked-adaptive-computationally-efficient-outlier-nominators">3.6. BACON (Blocked Adaptive Computationally-efficient Outlier Nominators)</h2>
+<section id="fundamento-teórico-5" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-5">Fundamento Teórico</h3>
+<p>BACON construye iterativamente un subconjunto “limpio” comenzando desde un núcleo inicial robusto.</p>
+<section id="propiedades-3" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-3">Propiedades</h4>
+<ul>
+<li>No es estrictamente equivariante afín a menos que se estandaricen las variables (recomendable: robust-z por mediana/MAD).</li>
+<li>Breakdown efectivo depende del proceso de expansión; tiende a ser menor que 50% pero escala bien en n.</li>
+<li>Eficiencia alta computacionalmente; útil como filtro previo para luego estimar Σ en el subconjunto limpio.</li>
+</ul>
+</section>
+</section>
+<section id="algoritmo-bacon-detallado" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-bacon-detallado">Algoritmo BACON Detallado</h3>
+<p><strong>Paso 1: Selección del Subconjunto Inicial</strong></p>
+<pre><code>1. Calcular distancias euclidianas al centroide:
+   centroide = mediana_componente_wise(X)
+   dist_k = ||x_k - centroide||₂
+   
+2. Seleccionar m = max(p+1, ⌊n*0.1⌋) observaciones con menor distancia
+3. Conjunto inicial: B₀ = {índices de las m observaciones más cercanas}</code></pre>
+<p><strong>Paso 2: Expansión Iterativa</strong></p>
+<pre><code>t = 0
+Repetir hasta que B no cambie:
+  1. Calcular estimadores del subconjunto actual con pesos espaciales:
+     μ_B = Σ(k∈B) w_k * x_k / Σ(k∈B) w_k
+     Σ_B = Σ(k∈B) w_k * (x_k - μ_B)(x_k - μ_B)^T / Σ(k∈B) w_k
+  
+  2. Calcular distancias de Mahalanobis para TODOS los puntos:
+     d²_k = (x_k - μ_B)^T * Σ_B^(-1) * (x_k - μ_B)
+  
+  3. Determinar umbral adaptativo:
+     c_t = χ²_p,1-α * correction_factor(|B_t|, n, p)
+     donde correction_factor = 1 + (p+1)/(n-|B_t|) + 2/(n-1-3p)
+  
+  4. Actualizar conjunto:
+     B_(t+1) = {k : d²_k &lt; c_t}
+  
+  5. Criterio de parada:
+     Si |B_(t+1)| = |B_t| o |B_(t+1)| &gt; n/2:
+        Terminar
+  
+  6. t = t + 1</code></pre>
+<p><strong>Paso 3: Refinamiento Final</strong></p>
+<pre><code>1. μ_BACON = μ_B_final
+2. Σ_BACON = factor_corrección * Σ_B_final
+   donde factor_corrección compensa el sesgo por selección</code></pre>
+<section id="de-las-matemáticas-al-algoritmo-2" class="level4">
+<h4 class="anchored" data-anchor-id="de-las-matemáticas-al-algoritmo-2">De las matemáticas al algoritmo</h4>
+<ul>
+<li>Se aproxima el conjunto H “limpio” donde las distancias de Mahalanobis (respecto a estimadores del propio H) siguen una (^2_p) truncada; el umbral se ajusta por tamaño de H y dimensión p.</li>
+<li>Con pesos espaciales, las medias/covarianzas dentro de H se calculan ponderadas por (w_k^{esp}), y los umbrales pueden adaptarse con factores dependientes de |H|.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="local-outlier-factor-lof" class="level2">
+<h2 class="anchored" data-anchor-id="local-outlier-factor-lof">3.7. Local Outlier Factor (LOF)</h2>
+<section id="fundamento-teórico-6" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-6">Fundamento Teórico</h3>
+<p>LOF mide la anomalía de un punto comparando su densidad local con la de sus vecinos:</p>
+<p><span class="math display">\[LOF_k = \frac{1}{|N_k|} \sum_{j \in N_k} \frac{lrd(x_j)}{lrd(x_k)}\]</span></p>
+</section>
+<section id="definiciones-clave" class="level3">
+<h3 class="anchored" data-anchor-id="definiciones-clave">Definiciones Clave</h3>
+<p><strong>k-distancia:</strong> <span class="math display">\[d_k(x) = \text{distancia al k-ésimo vecino más cercano}\]</span></p>
+<p><strong>Distancia de alcanzabilidad:</strong> <span class="math display">\[reach\_dist_k(x, y) = \max(d_k(y), d(x,y))\]</span></p>
+<p><strong>Densidad de alcanzabilidad local:</strong> <span class="math display">\[lrd_k(x) = \left(\frac{1}{|N_k(x)|} \sum_{y \in N_k(x)} reach\_dist_k(x, y)\right)^{-1}\]</span></p>
+</section>
+<section id="algoritmo-lof-para-gwpca" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-lof-para-gwpca">Algoritmo LOF para GWPCA</h3>
+<p>Intuición y comportamiento: - LOF no estima covarianza; mide rareza relativa de densidad. Se usa para transformar esa rareza en pesos de robustez. - Funciona bien cuando los outliers son de baja densidad respecto a sus vecinos; puede penalizar regiones de borde si k es muy bajo o muy alto. - Útil como capa previa de pesos combinados con el kernel espacial.</p>
+<section id="propiedades-e-implementación" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-e-implementación">Propiedades e implementación</h4>
+<ul>
+<li>No es equivariante afín; realizar estandarización previa es recomendable.</li>
+<li>Complejidad: O(n log n + n k log n) con estructuras de vecinos eficientes.</li>
+<li>Conversión matemática a pesos: (w^{rob}_i=(-,(0, LOF_i-1))) mantiene la continuidad y acota la influencia de altas razones de rareza.</li>
+</ul>
+<p><strong>Paso 1: Cálculo de LOF</strong></p>
+<pre><code>Para cada punto x_i:
+  1. Encontrar k-vecinos más cercanos N_k(x_i)
+  2. Calcular k-distancia: d_k(x_i)
+  3. Para cada vecino x_j ∈ N_k(x_i):
+     Calcular reach_dist_k(x_i, x_j) = max(d_k(x_j), d(x_i, x_j))
+  4. Calcular lrd_k(x_i) = |N_k(x_i)| / Σ reach_dist_k(x_i, x_j)
+  5. Calcular LOF_k(x_i) = Σ(lrd_k(x_j)/lrd_k(x_i)) / |N_k(x_i)|</code></pre>
+<p><strong>Paso 2: Conversión a Pesos de Robustez</strong></p>
+<pre><code>1. Transformar LOF a pesos:
+   w_rob,k = exp(-λ * max(0, LOF_k - 1))
+   donde λ controla la agresividad (típicamente λ = 3)
+   
+2. Normalizar pesos:
+   w_rob,k = w_rob,k / max(w_rob)</code></pre>
+<p><strong>Paso 3: Estimación Robusta Ponderada</strong></p>
+<pre><code>1. Combinar pesos espaciales y de robustez:
+   w_total,k = w_espacial,k * w_rob,k
+   
+2. Calcular estimadores:
+   μ_LOF = Σ(w_total,k * x_k) / Σ(w_total,k)
+   Σ_LOF = Σ(w_total,k * (x_k - μ_LOF)(x_k - μ_LOF)^T) / Σ(w_total,k)</code></pre>
+</section>
+</section>
+</section>
+<section id="robpca" class="level2">
+<h2 class="anchored" data-anchor-id="robpca">3.8. ROBPCA</h2>
+<section id="fundamento-teórico-7" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-7">Fundamento Teórico</h3>
+<p>ROBPCA combina proyección-persecución (PP) con estimadores robustos en espacios de menor dimensión.</p>
+<section id="distancias-de-diagnóstico" class="level4">
+<h4 class="anchored" data-anchor-id="distancias-de-diagnóstico">Distancias de diagnóstico</h4>
+<ul>
+<li>Score Distance (SD): (SD_i = )</li>
+<li>Orthogonal Distance (OD): (OD_i = |x_i - _i|_2), con (_i) la reconstrucción en el subespacio robusto.</li>
+<li>Umbrales típicos: SD comparada con (^2_k) y OD con corte robusto (p.&nbsp;ej., Q3 + 1.5 IQR de OD).</li>
+</ul>
+</section>
+</section>
+<section id="algoritmo-robpca-completo" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-robpca-completo">Algoritmo ROBPCA Completo</h3>
+<p><strong>Paso 1: Preprocesamiento y Reducción Inicial</strong></p>
+<pre><code>1. Centrado robusto inicial:
+   μ₀ = L1-mediana(X) (mediana espacial)
+   X_cent = X - μ₀
+   
+2. SVD inicial para reducción de dimensión:
+   Si n &lt; p:
+     [U, S, V] = SVD(X_cent^T)
+     X_red = X_cent * V[:,1:rank]
+   Sino:
+     X_red = X_cent</code></pre>
+<p><strong>Paso 2: Proyección Persecución (PP)</strong></p>
+<pre><code>Para j = 1 to k (número de componentes):
+  1. Inicializar: v_j = vector aleatorio unitario
+  
+  2. Repetir hasta convergencia:
+     a. Proyectar datos: z = X_red * v_j
+     
+     b. Calcular escala robusta:
+        s_j = MAD(z) * 1.4826
+     
+     c. Calcular pesos:
+        w_i = ψ(z_i/s_j) donde ψ es función de Huber
+     
+     d. Actualizar dirección con pesos espaciales:
+        v_j = Σ(w_i * w_espacial_i * x_i * z_i) / ||...||
+     
+     e. Verificar convergencia:
+        Si ||v_j^new - v_j^old|| &lt; ε: terminar
+  
+  3. Deflación:
+     X_red = X_red - z * v_j^T</code></pre>
+<p><strong>Paso 3: MCD en Subespacio</strong></p>
+<pre><code>1. Proyectar al subespacio k-dimensional:
+   T = X_cent * P_k donde P_k = [v_1, ..., v_k]
+   
+2. Aplicar MCD en el subespacio:
+   (μ_T, Σ_T) = MCD(T, h=⌊0.75n⌋)
+   
+3. Identificar outliers:
+   d²_i = (t_i - μ_T)^T * Σ_T^(-1) * (t_i - μ_T)
+   outliers = {i : d²_i &gt; χ²_k,0.975}</code></pre>
+<p><strong>Paso 4: Re-estimación y Proyección Inversa</strong></p>
+<pre><code>1. Subset limpio: H = {i : i ∉ outliers}
+
+2. Re-estimar en el subespacio con pesos espaciales:
+   μ_clean = Σ(i∈H) w_i * t_i / Σ(i∈H) w_i
+   Σ_clean = Σ(i∈H) w_i * (t_i - μ_clean)(t_i - μ_clean)^T / Σ(i∈H) w_i
+
+3. Proyección inversa al espacio original:
+   μ_ROBPCA = μ₀ + P_k * μ_clean
+   Σ_ROBPCA = P_k * Σ_clean * P_k^T + σ²_residual * P_⊥ * P_⊥^T
+   donde P_⊥ son las direcciones ortogonales</code></pre>
+<p>Intuición y comportamiento: - Adecuado cuando p es grande y/o p &gt; n: reduce dimensión de forma robusta antes de estimar la estructura. - Estable frente a outliers de fila (observacionales) y, con deflación, frente a outliers esparsos en direcciones específicas. - Suele capturar subespacios verdaderos con buena precisión incluso con contaminación moderada.</p>
+<section id="de-las-matemáticas-al-algoritmo-3" class="level4">
+<h4 class="anchored" data-anchor-id="de-las-matemáticas-al-algoritmo-3">De las matemáticas al algoritmo</h4>
+<ul>
+<li>La PP maximiza una medida robusta de dispersión de proyecciones (p.&nbsp;ej., MAD) para hallar direcciones; esto equivale a resolver problemas 1D robustos repetidamente y deflactar.</li>
+<li>En el subespacio k, estimar (μ_T, Σ_T) con MCD/S/MM; proyectar de vuelta para obtener (μ, Σ) en el espacio original.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="estimador-basado-en-profundidad-espacial" class="level2">
+<h2 class="anchored" data-anchor-id="estimador-basado-en-profundidad-espacial">3.9. Estimador Basado en Profundidad Espacial</h2>
+<section id="fundamento-teórico-8" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-8">Fundamento Teórico</h3>
+<p>La profundidad espacial mide cuán “central” es un punto respecto a la distribución:</p>
+<p><span class="math display">\[SD(y, X) = 1 - \left\|\frac{1}{n}\sum_{k=1}^n \frac{y - x_k}{\|y - x_k\|}\right\|\]</span></p>
+</section>
+<section id="propiedades-4" class="level3">
+<h3 class="anchored" data-anchor-id="propiedades-4">Propiedades</h3>
+<ul>
+<li><strong>Máximo en el centro</strong>: <span class="math display">\[SD(y, X) = 1\]</span> cuando <span class="math display">\[y\]</span> es el centro espacial</li>
+<li><strong>Mínimo en el infinito</strong>: <span class="math display">\[SD(y, X) \to 0\]</span> cuando <span class="math display">\[\|y\| \to \infty\]</span></li>
+<li><strong>Invarianza afín</strong>: <span class="math display">\[SD(Ay + b, AX + b) = SD(y, X)\]</span></li>
+</ul>
+</section>
+<section id="algoritmo-de-profundidad-espacial" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-de-profundidad-espacial">Algoritmo de Profundidad Espacial</h3>
+<p><strong>Paso 1: Cálculo de Profundidades</strong></p>
+<pre><code>Para cada observación x_i:
+  1. Calcular vector de direcciones unitarias:
+     u_ij = (x_i - x_j) / ||x_i - x_j|| para j ≠ i
+  
+  2. Calcular suma vectorial:
+     S_i = (1/n) * Σ(j≠i) u_ij
+  
+  3. Profundidad espacial:
+     SD_i = 1 - ||S_i||
+  
+  4. Manejar casos especiales:
+     Si x_i = x_j para algún j: usar perturbación pequeña</code></pre>
+<p><strong>Paso 2: Transformación a Pesos</strong></p>
+<pre><code>1. Normalizar profundidades:
+   SD_norm,i = SD_i / max(SD)
+   
+2. Aplicar función de transformación:
+   w_depth,i = SD_norm,i^α
+   donde α &gt; 0 controla la influencia (típicamente α = 2)</code></pre>
+<p><strong>Paso 3: Estimación Ponderada</strong></p>
+<pre><code>1. Combinar con pesos espaciales:
+   w_final,i = w_espacial,i * w_depth,i
+   
+2. Calcular estimadores:
+   μ_SD = Σ(w_final,i * x_i) / Σ(w_final,i)
+   Σ_SD = Σ(w_final,i * (x_i - μ_SD)(x_i - μ_SD)^T) / Σ(w_final,i)</code></pre>
+</section>
+<section id="mediana-espacial-como-caso-especial" class="level3">
+<h3 class="anchored" data-anchor-id="mediana-espacial-como-caso-especial">Mediana Espacial como Caso Especial</h3>
+<p>La mediana espacial minimiza: <span class="math display">\[\hat{\mu} = \arg\min_y \sum_{k=1}^n w_k \|y - x_k\|\]</span></p>
+<p><strong>Algoritmo de Weiszfeld:</strong></p>
+<pre><code>Repetir hasta convergencia:
+  μ^(t+1) = Σ(w_k * x_k / ||x_k - μ^t||) / Σ(w_k / ||x_k - μ^t||)</code></pre>
+<section id="estimadores-depth-weighted" class="level4">
+<h4 class="anchored" data-anchor-id="estimadores-depth-weighted">Estimadores depth-weighted</h4>
+<ul>
+<li>Media y covarianza ponderadas por profundidad: (_D = w^{esp}_i f(SD_i) x_i / w^{esp}_i f(SD_i)), (_D w^{esp}_i f(SD_i) (x_i-_D)(x_i-_D)^T), con f creciente en la centralidad (p.&nbsp;ej., f(t)=t^).</li>
+<li>Propiedades: robustez controlada por f; la equivarianza depende del tipo de profundidad (la profundidad espacial es ortogonalmente invariante y, con transformaciones adecuadas, aproximadamente afín).</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="recorte-espacial-spatial-trimming" class="level2">
+<h2 class="anchored" data-anchor-id="recorte-espacial-spatial-trimming">3.10. Recorte Espacial (Spatial Trimming)</h2>
+<section id="fundamento-teórico-9" class="level3">
+<h3 class="anchored" data-anchor-id="fundamento-teórico-9">Fundamento Teórico</h3>
+<p>El recorte espacial elimina observaciones identificadas como outliers antes del cálculo final:</p>
+<p><span class="math display">\[\hat{\theta}_{trim} = \theta_{classic}(X \setminus O)\]</span></p>
+<p>donde <span class="math display">\[O\]</span> es el conjunto de outliers detectados.</p>
+</section>
+<section id="algoritmo-de-recorte-espacial-adaptativo" class="level3">
+<h3 class="anchored" data-anchor-id="algoritmo-de-recorte-espacial-adaptativo">Algoritmo de Recorte Espacial Adaptativo</h3>
+<p><strong>Paso 1: Detección Inicial de Outliers</strong></p>
+<pre><code>1. Obtener estimación robusta inicial:
+   (μ_rob, Σ_rob) = MCD(X, h=⌊0.75n⌋)
+   
+2. Calcular distancias robustas:
+   d²_rob,k = (x_k - μ_rob)^T * Σ_rob^(-1) * (x_k - μ_rob)
+   
+3. Factor de corrección para muestras finitas:
+   c_n,p = (1 + 15/(n-p))^2</code></pre>
+<p><strong>Paso 2: Identificación Adaptativa</strong></p>
+<pre><code>1. Umbral adaptativo basado en la distribución empírica:
+   q_emp = quantile(d²_rob, 1-α)
+   q_teo = χ²_p,1-α
+   c_adapt = max(q_emp, q_teo * c_n,p)
+   
+2. Clasificación con pesos espaciales:
+   score_k = d²_rob,k / (w_espacial,k + ε)
+   O = {k : score_k &gt; c_adapt}</code></pre>
+<p><strong>Paso 3: Recorte Iterativo</strong></p>
+<pre><code>Repetir max_iter veces:
+  1. Conjunto limpio: H = {1,...,n} \ O
+  
+  2. Re-estimar con pesos espaciales:
+     μ_H = Σ(k∈H) w_k * x_k / Σ(k∈H) w_k
+     Σ_H = Σ(k∈H) w_k * (x_k - μ_H)(x_k - μ_H)^T / Σ(k∈H) w_k
+  
+  3. Recalcular distancias:
+     d²_k = (x_k - μ_H)^T * Σ_H^(-1) * (x_k - μ_H)
+  
+  4. Actualizar outliers con suavizado:
+     O_new = {k : d²_k &gt; c_adapt AND k ∈ O_prev}
+     ∪ {k : d²_k &gt; 1.5 * c_adapt}
+  
+  5. Criterio de convergencia:
+     Si |O_new| = |O|: terminar
+     O = O_new</code></pre>
+<p><strong>Paso 4: Estimación Final</strong></p>
+<pre><code>1. Aplicar factor de eficiencia:
+   μ_trim = μ_H
+   Σ_trim = c_eff * Σ_H
+   donde c_eff = n / (n - |O|) * f_p
+   y f_p es factor de corrección dimensional</code></pre>
+<section id="propiedades-y-puente-teoríaimplementación" class="level4">
+<h4 class="anchored" data-anchor-id="propiedades-y-puente-teoríaimplementación">Propiedades y puente teoría–implementación</h4>
+<ul>
+<li>El trimming equivale a imponer pesos binarios 0/1 con un umbral sobre distancias robustas; el nivel de recorte α controla el breakdown teórico (≈α).</li>
+<li>En el marco espacial, el umbral puede depender de la ventana: combinar distancias robustas con (w^{esp}) evita descartar sistemáticamente zonas de baja densidad.</li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+<section id="implementación-práctica-y-consideraciones" class="level1">
+<h1>Implementación Práctica y Consideraciones</h1>
+<section id="regularización-y-estabilidad-numérica" class="level2">
+<h2 class="anchored" data-anchor-id="regularización-y-estabilidad-numérica">Regularización y Estabilidad Numérica</h2>
+<section id="problema-de-matrices-singulares" class="level3">
+<h3 class="anchored" data-anchor-id="problema-de-matrices-singulares">Problema de Matrices Singulares</h3>
+<p>En contextos de alta dimensionalidad o muestras pequeñas locales, <span class="math display">\[\tilde{\Sigma}\]</span> puede ser singular o mal condicionada.</p>
+</section>
+<section id="soluciones-implementadas" class="level3">
+<h3 class="anchored" data-anchor-id="soluciones-implementadas">Soluciones Implementadas</h3>
+<p><strong>1. Simetrización Forzada:</strong> <span class="math display">\[\tilde{\Sigma} \leftarrow \frac{1}{2}(\tilde{\Sigma} + \tilde{\Sigma}^T)\]</span></p>
+<p><strong>2. Regularización Ridge:</strong> <span class="math display">\[\tilde{\Sigma}_{reg} = \tilde{\Sigma} + \lambda I_p\]</span></p>
+<p>donde <span class="math display">\[\lambda\]</span> se elige adaptativamente: <span class="math display">\[\lambda = \max\left(10^{-6}, 0.01 \cdot \text{traza}(\tilde{\Sigma})/p\right)\]</span></p>
+<p><strong>3. Regularización por Contracción (Shrinkage):</strong> <span class="math display">\[\tilde{\Sigma}_{shrink} = \alpha \tilde{\Sigma} + (1-\alpha) \sigma^2 I_p\]</span></p>
+<p>donde <span class="math display">\[\alpha \in [0,1]\]</span> se estima por validación cruzada.</p>
+<p><strong>4. Proyección al Cono de Matrices Definidas Positivas:</strong></p>
+<pre><code>1. Descomposición espectral: Σ = QΛQ^T
+2. Truncamiento: Λ_+ = max(Λ, ε*I)
+3. Reconstrucción: Σ_+ = Q*Λ_+*Q^T</code></pre>
+</section>
+</section>
+<section id="selección-del-método-robusto" class="level2">
+<h2 class="anchored" data-anchor-id="selección-del-método-robusto">Selección del Método Robusto</h2>
+<section id="criterios-de-decisión" class="level3">
+<h3 class="anchored" data-anchor-id="criterios-de-decisión">Criterios de Decisión</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 26%">
+<col style="width: 17%">
+<col style="width: 19%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Método</th>
+<th>Punto de Ruptura</th>
+<th>Eficiencia</th>
+<th>Complejidad</th>
+<th>Uso Recomendado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Huber</td>
+<td>0%</td>
+<td>95%</td>
+<td>O(np²)</td>
+<td>Contaminación leve</td>
+</tr>
+<tr class="even">
+<td>MCD</td>
+<td>50%</td>
+<td>30-40%</td>
+<td>O(np²log n)</td>
+<td>Propósito general</td>
+</tr>
+<tr class="odd">
+<td>MVE</td>
+<td>50%</td>
+<td>20-30%</td>
+<td>O(n^p)</td>
+<td>Muestras pequeñas</td>
+</tr>
+<tr class="even">
+<td>S-Est</td>
+<td>50%</td>
+<td>30%</td>
+<td>O(np²)</td>
+<td>Alto punto ruptura</td>
+</tr>
+<tr class="odd">
+<td>MM-Est</td>
+<td>50%</td>
+<td>95%</td>
+<td>O(np²)</td>
+<td>Balance óptimo</td>
+</tr>
+<tr class="even">
+<td>BACON</td>
+<td>40%</td>
+<td>80%</td>
+<td>O(np²)</td>
+<td>Datasets grandes</td>
+</tr>
+<tr class="odd">
+<td>LOF</td>
+<td>Variable</td>
+<td>Alta</td>
+<td>O(n²p)</td>
+<td>Outliers locales</td>
+</tr>
+<tr class="even">
+<td>ROBPCA</td>
+<td>50%</td>
+<td>60%</td>
+<td>O(np²)</td>
+<td>Alta dimensión</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="diagrama-de-flujo-para-selección" class="level3">
+<h3 class="anchored" data-anchor-id="diagrama-de-flujo-para-selección">Diagrama de Flujo para Selección</h3>
+<pre class="mermaid"><code>graph TD
+    A[Inicio] --&gt; B{p &gt; 10?}
+    B --&gt;|Sí| C[ROBPCA]
+    B --&gt;|No| D{n &gt; 1000?}
+    D --&gt;|Sí| E[BACON]
+    D --&gt;|No| F{Contaminación esperada?}
+    F --&gt;|&lt; 10%| G[Huber]
+    F --&gt;|10-30%| H[MM-Estimador]
+    F --&gt;|&gt; 30%| I[MCD o S-Estimador]
+    F --&gt;|Desconocida| J[MCD por defecto]</code></pre>
+</section>
+</section>
+<section id="validación-y-diagnóstico" class="level2">
+<h2 class="anchored" data-anchor-id="validación-y-diagnóstico">Validación y Diagnóstico</h2>
+<section id="métricas-de-evaluación" class="level3">
+<h3 class="anchored" data-anchor-id="métricas-de-evaluación">Métricas de Evaluación</h3>
+<p><strong>1. Distancia de Procrustes:</strong> <span class="math display">\[d_P(\Sigma_1, \Sigma_2) = \|\Sigma_1^{1/2} - R\Sigma_2^{1/2}\|_F\]</span></p>
+<p><strong>2. Ángulo entre Subespacios:</strong> <span class="math display">\[\theta = \arccos\left(\frac{\text{tr}(P_1^T P_2)}{\min(r_1, r_2)}\right)\]</span></p>
+<p><strong>3. Error de Reconstrucción:</strong> <span class="math display">\[MSE = \frac{1}{n}\sum_{k=1}^n \|x_k - \hat{x}_k\|^2\]</span></p>
+</section>
+<section id="diagnósticos-de-robustez" class="level3">
+<h3 class="anchored" data-anchor-id="diagnósticos-de-robustez">Diagnósticos de Robustez</h3>
+<p><strong>1. Gráfico de Distancias:</strong> - Eje X: Distancias clásicas de Mahalanobis - Eje Y: Distancias robustas de Mahalanobis - Interpretación: Puntos alejados de la diagonal son outliers</p>
+<p><strong>2. Análisis de Influencia:</strong> <span class="math display">\[IF_k = \|\theta(X) - \theta(X \setminus \{x_k\})\|\]</span></p>
+<p><strong>3. Estabilidad Bootstrap:</strong></p>
+<pre><code>Para b = 1 to B:
+  1. Muestra bootstrap: X_b* = muestra con reemplazo de X
+  2. Estimar: θ_b* = estimador_robusto(X_b*)
+  3. Acumular para intervalos de confianza</code></pre>
+</section>
+</section>
+</section>
+<section id="de-la-teoría-al-paso-a-paso" class="level1">
+<h1>De la teoría al paso a paso</h1>
+<p>Esta guía resume cómo implementar GWPCA robusto desde cero, conectando cada decisión con su base teórica.</p>
+<ol type="1">
+<li>Preparación y estandarización
+<ul>
+<li>Teoría: PCA depende de la escala; estandarizar evita que una variable domine por unidades.</li>
+<li>Práctica: escalar variables (z-score) global o localmente si hay fuertes gradientes.</li>
+</ul></li>
+<li>Elección del esquema espacial
+<ul>
+<li>Teoría: la matriz de pesos define la vecindad y controla varianza–sesgo.</li>
+<li>Práctica: kernel gaussiano o bisquare; bandwidth fijo o adaptativo (k vecinos). Validar con CV local/global.</li>
+</ul></li>
+<li>Selección del estimador robusto
+<ul>
+<li>Teoría: compromiso entre punto de ruptura y eficiencia.</li>
+<li>Práctica: MCD/MM para alta robustez; Huber si la contaminación es leve; ROBPCA si p es grande o p &gt; n.</li>
+</ul></li>
+<li>Cálculo de pesos totales
+<ul>
+<li>Teoría: combinar peso espacial y de robustez reduce influencia de outliers (IF acotada) respetando proximidad.</li>
+<li>Práctica: w_total = w_espacial × w_rob (de LOF, profundidad o ψ/ρ).</li>
+</ul></li>
+<li>Centro y covarianza locales robustos
+<ul>
+<li>Teoría: estimadores equivariantes afín y de alto breakdown (MCD/S/MM) mantienen estructura bajo contaminación.</li>
+<li>Práctica: resolver por ventana; regularizar Σ si hay colinealidad o p cercano a n (añadir τI con τ pequeño).</li>
+</ul></li>
+<li>Descomposición espectral
+<ul>
+<li>Teoría: eigenvalores/eigenvectores de Σ(s) dan varianzas y direcciones principales locales.</li>
+<li>Práctica: ordenar por varianza explicada; seleccionar k por umbral (p.&nbsp;ej., 80–95%) o criterios de información.</li>
+</ul></li>
+<li>Scores y mapas
+<ul>
+<li>Teoría: proyectar datos centrados sobre loadings locales.</li>
+<li>Práctica: mapear varianza explicada, loadings y scores para interpretar patrones espaciales.</li>
+</ul></li>
+<li>Diagnóstico de robustez
+<ul>
+<li>Teoría: comparar distancias clásica vs.&nbsp;robusta; usar IF y bootstrap para estabilidad.</li>
+<li>Práctica: gráficos de distancias, influencia leave-one-out, estabilidad de loadings por re-muestreo.</li>
+</ul></li>
+<li>Sensibilidad de hiperparámetros
+<ul>
+<li>Teoría: c (Huber/Tukey), h (MCD), k (LOF), bandwidth.</li>
+<li>Práctica: analizar rejilla pequeña y elegir por CV y estabilidad de mapas.</li>
+</ul></li>
+<li>Informe e interpretación</li>
+</ol>
+<ul>
+<li>Teoría: los componentes son combinaciones lineales; su significado depende de cargas/variables dominantes.</li>
+<li>Práctica: acompañar mapas con tablas de loadings locales (top-3 por zona) y bandas de confianza por bootstrap.</li>
+</ul>
+</section>
+<section id="ejemplo-de-código-integrado" class="level1">
+<h1>Ejemplo de Código Integrado</h1>
+<section id="pseudocódigo-del-gwpca-robusto-completo" class="level2">
+<h2 class="anchored" data-anchor-id="pseudocódigo-del-gwpca-robusto-completo">Pseudocódigo del GWPCA Robusto Completo</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>function GWPCA_Robusto(X, S, metodo, bandwidth, n_componentes):</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Inicialización</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    n, p <span class="op">=</span> dimensiones(X)</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    resultados <span class="op">=</span> []</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Para cada ubicación focal</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    para i <span class="op">=</span> <span class="dv">1</span> hasta n:</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Calcular pesos espaciales</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>        W <span class="op">=</span> calcular_pesos_kernel(S, S[i], bandwidth)</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Aplicar método robusto seleccionado</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>        switch metodo:</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> <span class="st">"Huber"</span>:</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>                mu, Sigma <span class="op">=</span> huber_estimator(X, W)</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> <span class="st">"MCD"</span>:</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>                mu, Sigma <span class="op">=</span> fast_mcd(X, W)</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> <span class="st">"MM"</span>:</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>                mu, Sigma <span class="op">=</span> mm_estimator(X, W)</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> <span class="st">"ROBPCA"</span>:</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>                mu, Sigma <span class="op">=</span> robpca(X, W)</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>            <span class="co"># ... otros métodos</span></span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Regularización</span></span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>        Sigma <span class="op">=</span> regularizar_matriz(Sigma)</span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Descomposición espectral</span></span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>        valores, vectores <span class="op">=</span> eigen(Sigma)</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Ordenar por varianza explicada</span></span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>        idx <span class="op">=</span> ordenar_descendente(valores)</span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>        valores <span class="op">=</span> valores[idx[<span class="dv">1</span>:n_componentes]]</span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>        vectores <span class="op">=</span> vectores[:, idx[<span class="dv">1</span>:n_componentes]]</span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Calcular scores locales</span></span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>        X_centrado <span class="op">=</span> X <span class="op">-</span> mu</span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a>        scores <span class="op">=</span> X_centrado <span class="op">@</span> vectores</span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Almacenar resultados</span></span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a>        resultados[i] <span class="op">=</span> {</span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ubicacion"</span>: S[i],</span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>            <span class="st">"media"</span>: mu,</span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a>            <span class="st">"covarianza"</span>: Sigma,</span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a>            <span class="st">"valores_propios"</span>: valores,</span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a>            <span class="st">"vectores_propios"</span>: vectores,</span>
+<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a>            <span class="st">"scores"</span>: scores,</span>
+<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a>            <span class="st">"varianza_explicada"</span>: valores <span class="op">/</span> suma(valores)</span>
+<span id="cb35-47"><a href="#cb35-47" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb35-48"><a href="#cb35-48" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb35-49"><a href="#cb35-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> resultados</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="conclusiones-y-perspectivas" class="level1">
+<h1>Conclusiones y Perspectivas</h1>
+<section id="ventajas-del-gwpca-robusto" class="level2">
+<h2 class="anchored" data-anchor-id="ventajas-del-gwpca-robusto">Ventajas del GWPCA Robusto</h2>
+<ol type="1">
+<li><strong>Resistencia a Outliers</strong>: Mantiene estimaciones estables incluso con 30-50% de contaminación</li>
+<li><strong>Adaptabilidad Espacial</strong>: Diferentes niveles de robustez según el contexto local</li>
+<li><strong>Interpretabilidad</strong>: Los componentes mantienen significado geográfico</li>
+</ol>
+</section>
+<section id="limitaciones-y-desafíos" class="level2">
+<h2 class="anchored" data-anchor-id="limitaciones-y-desafíos">Limitaciones y Desafíos</h2>
+<ol type="1">
+<li><strong>Costo Computacional</strong>: Mayor que GWPCA clásico (factor 2-10×)</li>
+<li><strong>Selección de Parámetros</strong>: Ancho de banda, método robusto, parámetros de tuning</li>
+<li><strong>Maldición de la Dimensionalidad</strong>: Degradación con p grande</li>
+</ol>
+</section>
+<section id="direcciones-futuras" class="level2">
+<h2 class="anchored" data-anchor-id="direcciones-futuras">Direcciones Futuras</h2>
+<ol type="1">
+<li><strong>Métodos Híbridos</strong>: Combinar múltiples estimadores según características locales</li>
+<li><strong>Robustez Adaptativa</strong>: Ajustar nivel de robustez según contaminación local detectada</li>
+<li><strong>Paralelización</strong>: Implementación en GPU para datasets masivos</li>
+<li><strong>Extensiones No-lineales</strong>: GWPCA robusto con kernels no-lineales</li>
+</ol>
+</section>
+</section>
+<section id="referencias-bibliográficas" class="level1">
+<h1>Referencias Bibliográficas</h1>
+<p>Billor, N., Hadi, A. S., &amp; Velleman, P. F. (2000). BACON: blocked adaptive computationally efficient outlier nominators. <em>Computational Statistics &amp; Data Analysis</em>, 34(3), 279-298.</p>
+<p>Breunig, M. M., Kriegel, H. P., Ng, R. T., &amp; Sander, J. (2000). LOF: identifying density-based local outliers. In <em>Proceedings of the 2000 ACM SIGMOD international conference on Management of data</em> (pp.&nbsp;93-104).</p>
+<p>Fotheringham, A. S., Brunsdon, C., &amp; Charlton, M. (2002). <em>Geographically weighted regression: the analysis of spatially varying relationships</em>. John Wiley &amp; Sons.</p>
+<p>Harris, P., Brunsdon, C., &amp; Charlton, M. (2011). Geographically weighted principal components analysis. <em>International Journal of Geographical Information Science</em>, 25(10), 1717-1736.</p>
+<p>Huber, P. J. (1964). Robust estimation of a location parameter. <em>The Annals of Mathematical Statistics</em>, 35(1), 73-101.</p>
+<p>Hubert, M., Rousseeuw, P. J., &amp; Vanden Branden, K. (2005). ROBPCA: a new approach to robust principal component analysis. <em>Technometrics</em>, 47(1), 64-79.</p>
+<p>Maronna, R. A. (1976). Robust M-estimators of multivariate location and scatter. <em>The Annals of Statistics</em>, 4(1), 51-67.</p>
+<p>Maronna, R. A., Martin, R. D., Yohai, V. J., &amp; Salibián-Barrera, M. (2019). <em>Robust statistics: theory and methods (with R)</em>. John Wiley &amp; Sons.</p>
+<p>Rousseeuw, P. J. (1984). Least median of squares regression. <em>Journal of the American Statistical Association</em>, 79(388), 871-880.</p>
+<p>Rousseeuw, P. J. (1985). Multivariate estimation with high breakdown point. In <em>Mathematical statistics and applications</em> (pp.&nbsp;283-297). Springer.</p>
+<p>Rousseeuw, P. J., &amp; Van Driessen, K. (1999). A fast algorithm for the minimum covariance determinant estimator. <em>Technometrics</em>, 41(3), 212-223.</p>
+<p>Rousseeuw, P. J., &amp; Yohai, V. (1984). Robust regression by means of S-estimators. In <em>Robust and nonlinear time series analysis</em> (pp.&nbsp;256-272). Springer.</p>
+<p>Ruppert, D. (1992). Computing S estimators for regression and multivariate location/dispersion. <em>Journal of Computational and Graphical Statistics</em>, 1(3), 253-270.</p>
+<p>Vardi, Y., &amp; Zhang, C. H. (2000). The multivariate L1-median and associated data depth. <em>Proceedings of the National Academy of Sciences</em>, 97(4), 1423-1426.</p>
+<p>Yohai, V. J. (1987). High breakdown-point and high efficiency robust estimates for regression. <em>The Annals of Statistics</em>, 15(2), 642-656.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

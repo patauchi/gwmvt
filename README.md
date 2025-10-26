@@ -31,6 +31,61 @@ System requirements:
 - GNU make
 - OpenMP recommended (Automatically detected; package falls back gracefully when absent.)
 
+#### Enabling OpenMP
+
+OpenMP dramatically accelerates the heavy GWPCA workloads. Installation differs by platform:
+
+- **macOS** (homebrew + clang-omp):
+
+  ```sh
+  brew install llvm libomp
+  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+  echo 'export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"' >> ~/.zshrc
+  echo 'export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"' >> ~/.zshrc
+  ```
+
+  After restarting the shell, configure your R `~/.R/Makevars` (or `Makevars` in `~/.R`):
+
+  ```make
+  CC=/opt/homebrew/opt/llvm/bin/clang
+  CXX=/opt/homebrew/opt/llvm/bin/clang++
+  CXX11=/opt/homebrew/opt/llvm/bin/clang++
+  CXX14=/opt/homebrew/opt/llvm/bin/clang++
+  CXX17=/opt/homebrew/opt/llvm/bin/clang++
+  CFLAGS=-O3 -march=native
+  CXXFLAGS=-O3 -march=native
+  LDFLAGS+=-L/opt/homebrew/opt/llvm/lib
+  CPPFLAGS+=-I/opt/homebrew/opt/llvm/include
+  SHLIB_OPENMP_CFLAGS=-fopenmp
+  SHLIB_OPENMP_CXXFLAGS=-fopenmp
+  SHLIB_OPENMP_FCFLAGS=-fopenmp
+  SHLIB_OPENMP_FFLAGS=-fopenmp
+  ```
+
+  Intel macs should replace `/opt/homebrew` with `/usr/local`.
+
+- **Windows** (Rtools + gcc):
+
+  1. Install the latest [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
+  2. Ensure `C:\rtools44\usr\bin` and the corresponding `mingw` paths (e.g. `C:\rtools44\x86_64-w64-mingw32.static.posix\bin`) are on `PATH`.
+  3. Open `~\Documents\.R\Makevars.win` (create if missing) and add:
+
+     ```make
+     CXX11FLAGS=-O3 -march=native -mtune=native
+     CXX14FLAGS=$(CXX11FLAGS)
+     CXX17FLAGS=$(CXX11FLAGS)
+     CXXFLAGS=$(CXX11FLAGS)
+     CFLAGS=$(CXX11FLAGS)
+     SHLIB_OPENMP_CFLAGS=-fopenmp
+     SHLIB_OPENMP_CXXFLAGS=-fopenmp
+     SHLIB_OPENMP_FFLAGS=-fopenmp
+     SHLIB_OPENMP_FCFLAGS=-fopenmp
+     ```
+
+  4. Restart R (or RStudio) so the toolchain and flags are picked up.
+
+On both platforms, verify `gwmvt::has_openmp_support()` returns `TRUE` after rebuilding any packages that rely on OpenMP.
+
 ## Quick Start
 
 ```r
