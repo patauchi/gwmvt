@@ -8,3 +8,4 @@ src/*.dll
 external
 inst/notes
 inst/include
+ref

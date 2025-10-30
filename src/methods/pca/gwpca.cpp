@@ -3,6 +3,7 @@
 #include "../../core/algebra.h"
 #include "../../core/distances.h"
 #include "../../utils/diagnostics.h"
+#include <RcppArmadillo.h>
 #include <RcppParallel.h>
 #include <algorithm>
 #include <numeric>
@@ -83,8 +84,15 @@ void GWPCA::detect_spatial_outliers() {
     outlier_config.bandwidth = outlier_bandwidth;
     SpatialWeights outlier_weights(coords_, outlier_config);
     
+    // Early user interrupt check before heavy loop
+    Rcpp::checkUserInterrupt();
+    
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < n; ++i) {
+        // Safe only when not compiled with OpenMP; otherwise avoid calling R API from threads
+        #ifndef _OPENMP
+        if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+        #endif
         Vec weights = outlier_weights.compute_weights(i);
         weights(i) = 0.0;  // Exclude self
         
@@ -159,7 +167,13 @@ void GWPCA::fit_local(int location) {
     
     // Check numerical stability
     if (pca_result.eigenvalues.has_nan() || pca_result.eigenvalues(0) < 1e-10) {
-        diagnostics_.add_warning("Unstable solution at location " + std::to_string(location));
+        // Guard diagnostics mutation when running in parallel
+        #ifdef _OPENMP
+        #pragma omp critical(gwmvt_diag)
+        #endif
+        {
+            diagnostics_.add_warning("Unstable solution at location " + std::to_string(location));
+        }
         // Try standard PCA as fallback
         pca_result = fit_standard_pca(standardized_data_, weights);
     }
@@ -216,7 +230,11 @@ LocalPCAResult GWPCA::fit_robust_pca(const Mat& data, const Vec& weights) {
     LocalPCAResult result(p);
     
     // Apply robust estimation
-    RobustStats robust_stats = robust_estimator_->estimate(data, weights);
+    // Create a thread-local estimator to avoid shared mutable state across threads
+    // and potential data races on internal diagnostics.
+    auto local_estimator = create_robust_estimator(pca_config_->robust_method, 
+                                                  robust_estimator_->get_config());
+    RobustStats robust_stats = local_estimator->estimate(data, weights);
     
     result.center = robust_stats.center;
     
@@ -263,14 +281,16 @@ void GWPCA::fit_parallel() {
     int n = data_.n_rows;
     progress_counter_.store(0);
     
+    // Do not emit progress updates from worker threads (not thread-safe with R I/O).
+    // Only update the atomic counter and finalize after the parallel region.
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < n; ++i) {
         fit_local(i);
-        int current = progress_counter_.fetch_add(1) + 1;
-        if (current % 100 == 0 || current == n) {
-            progress_->report(current, n);
-        }
+        progress_counter_.fetch_add(1);
     }
+    
+    // Report completion (sequential, thread-safe)
+    progress_->report(n, n);
 }
 
 // Create result object
@@ -339,6 +359,9 @@ double GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
     
     #pragma omp parallel for
     for (int b = 0; b < n_bw; ++b) {
+        #ifndef _OPENMP
+        if ((b & 15) == 0) Rcpp::checkUserInterrupt();
+        #endif
         double cv_error = 0.0;
         
         for (int fold = 0; fold < n_folds; ++fold) {
@@ -382,6 +405,9 @@ double GWPCA::select_bandwidth_cv(const Mat& data, const Mat& coords,
                     // Simplified error calculation
                     cv_error += arma::norm(data.row(test_idx(i)), 2);
                 }
+            } catch (const Rcpp::internal::InterruptedException&) {
+                // Propagate user interrupt to R
+                throw;
             } catch (...) {
                 cv_error += 1e10;  // Penalize failed fits
             }
@@ -402,6 +428,9 @@ double GWPCA::select_bandwidth_aic(const Mat& data, const Mat& coords,
     
     #pragma omp parallel for
     for (int b = 0; b < n_bw; ++b) {
+        #ifndef _OPENMP
+        if ((b & 15) == 0) Rcpp::checkUserInterrupt();
+        #endif
         // Create GWPCA config for this bandwidth
         GWConfig gw_config;
         gw_config.bandwidth = candidates(b);
@@ -419,6 +448,9 @@ double GWPCA::select_bandwidth_aic(const Mat& data, const Mat& coords,
             double log_likelihood = -arma::sum(arma::log(pca_result->eigenvalues.col(0)));
             double n_params = data.n_cols * config.n_components;
             aic_scores(b) = -2 * log_likelihood + 2 * n_params;
+        } catch (const Rcpp::internal::InterruptedException&) {
+            // Propagate user interrupt to R
+            throw;
         } catch (...) {
             aic_scores(b) = 1e10;  // Penalize failed fits
         }

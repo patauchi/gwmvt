@@ -90,6 +90,9 @@ public:
         
         // Fill sparse matrix
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             Vec weights = compute_weights(i);
             
             for (int j = 0; j < n; ++j) {

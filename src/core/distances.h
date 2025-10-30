@@ -41,6 +41,9 @@ public:
         
         #pragma omp simd
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 4095) == 0) Rcpp::checkUserInterrupt();
+            #endif
             double dx = coords(i, 0) - focal_x;
             double dy = coords(i, 1) - focal_y;
             distances(i) = std::sqrt(dx * dx + dy * dy);
@@ -55,6 +58,9 @@ public:
         
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = i + 1; j < n; ++j) {
                 double dx = coords(i, 0) - coords(j, 0);
                 double dy = coords(i, 1) - coords(j, 1);
@@ -74,6 +80,9 @@ public:
         
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < n1; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = 0; j < n2; ++j) {
                 double dx = coords1(i, 0) - coords2(j, 0);
                 double dy = coords1(i, 1) - coords2(j, 1);
@@ -99,6 +108,9 @@ public:
         
         #pragma omp simd
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 4095) == 0) Rcpp::checkUserInterrupt();
+            #endif
             double dx = std::abs(coords(i, 0) - focal_x);
             double dy = std::abs(coords(i, 1) - focal_y);
             distances(i) = dx + dy;
@@ -113,6 +125,9 @@ public:
         
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = i + 1; j < n; ++j) {
                 double dx = std::abs(coords(i, 0) - coords(j, 0));
                 double dy = std::abs(coords(i, 1) - coords(j, 1));
@@ -132,6 +147,9 @@ public:
         
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < n1; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = 0; j < n2; ++j) {
                 double dx = std::abs(coords1(i, 0) - coords2(j, 0));
                 double dy = std::abs(coords1(i, 1) - coords2(j, 1));
@@ -176,6 +194,9 @@ public:
         
         #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             distances(i) = haversine(focal_lat, focal_lon, coords(i, 1), coords(i, 0));
         }
         
@@ -188,6 +209,9 @@ public:
         
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = i + 1; j < n; ++j) {
                 double dist = haversine(coords(i, 1), coords(i, 0), 
                                       coords(j, 1), coords(j, 0));
@@ -206,6 +230,9 @@ public:
         
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < n1; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             for (int j = 0; j < n2; ++j) {
                 dist_mat(i, j) = haversine(coords1(i, 1), coords1(i, 0),
                                          coords2(j, 1), coords2(j, 0));
@@ -235,12 +262,15 @@ public:
         
         if (p_ == 1.0) {
             // Manhattan distance
-            #pragma omp simd
-            for (int i = 0; i < n; ++i) {
-                double dx = std::abs(coords(i, 0) - focal_x);
-                double dy = std::abs(coords(i, 1) - focal_y);
-                distances(i) = dx + dy;
-            }
+        #pragma omp simd
+        for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 4095) == 0) Rcpp::checkUserInterrupt();
+            #endif
+            double dx = std::abs(coords(i, 0) - focal_x);
+            double dy = std::abs(coords(i, 1) - focal_y);
+            distances(i) = dx + dy;
+        }
         } else if (p_ == 2.0) {
             // Euclidean distance
             #pragma omp simd
@@ -276,6 +306,9 @@ public:
         
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < n; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             Vec dists = calculate_from_point(coords, i);
             dist_mat.row(i) = dists.t();
         }
@@ -290,6 +323,9 @@ public:
         
         #pragma omp parallel for
         for (int i = 0; i < n1; ++i) {
+            #ifndef _OPENMP
+            if ((i & 255) == 0) Rcpp::checkUserInterrupt();
+            #endif
             Vec dists = calculate_from_point(coords2, i);
             dist_mat.row(i) = dists.t();
         }

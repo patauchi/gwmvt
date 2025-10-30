@@ -133,6 +133,10 @@ protected:
     void fit_sequential() {
         int n = data_.n_rows;
         for (int i = 0; i < n; ++i) {
+            // Allow user interrupt from R to stop long-running computations
+            if ((i & 255) == 0) {
+                Rcpp::checkUserInterrupt();
+            }
             fit_local(i);
             progress_->report(i + 1, n);
         }

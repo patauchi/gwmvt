@@ -1,7 +1,7 @@
 Package: gwmvt
 Type: Package
 Title: Geographically Weighted Multivariate Analysis
-Version: 0.1.29
+Version: 0.1.32
 Date: 2024-01-15
 Authors@R: c(
     person("P.Joser", "Atauchi", email = "patauchi@gmail.com",

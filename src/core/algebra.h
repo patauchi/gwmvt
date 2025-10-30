@@ -30,6 +30,9 @@ inline Mat weighted_covariance(const Mat& X, const Vec& weights, const Vec& cent
     double sum_weights = arma::sum(weights);
     
     for (int i = 0; i < n; ++i) {
+        #ifndef _OPENMP
+        if ((i & 2047) == 0) Rcpp::checkUserInterrupt();
+        #endif
         Vec x = X_centered.row(i).t();
         cov += weights(i) * (x * x.t());
     }
@@ -166,6 +169,9 @@ inline Vec mahalanobis_distance(const Mat& X, const Vec& center, const Mat& cov_
     
     #pragma omp parallel for
     for (int i = 0; i < n; ++i) {
+        #ifndef _OPENMP
+        if ((i & 2047) == 0) Rcpp::checkUserInterrupt();
+        #endif
         Vec x = X_centered.row(i).t();
         distances(i) = std::sqrt(arma::as_scalar(x.t() * cov_inv * x));
     }

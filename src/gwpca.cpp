@@ -102,6 +102,8 @@ List gwpca_cpp(const arma::mat& data,
         } else {
             Rcpp::stop("Unknown kernel: %s", kernel);
         }
+    } catch (const Rcpp::internal::InterruptedException&) {
+        throw;
     } catch (...) {
         Rcpp::stop("Failed to set kernel type");
     }
@@ -151,6 +153,8 @@ List gwpca_cpp(const arma::mat& data,
     // Prepare output
     List result = List::create(
         Named("eigenvalues") = eigenvalues_subset,
+        // Standard deviations of PCs (sqrt of eigenvalues) for convenience/comparison
+        Named("sdev") = arma::sqrt(eigenvalues_subset),
         Named("loadings") = pca_result->loadings,
         Named("scores") = pca_result->scores,
         Named("var_explained") = pca_result->var_explained,
@@ -189,6 +193,7 @@ arma::uvec detect_spatial_outliers_cpp(const arma::mat& data,
     
     // Calculate local Mahalanobis distances
     for (int i = 0; i < n; ++i) {
+        if ((i & 255) == 0) Rcpp::checkUserInterrupt();
         vec distances = calculate_distances(coords, i);
         vec weights = gaussian_weights(distances, bandwidth);
         weights = weights / sum(weights);
@@ -214,6 +219,7 @@ arma::vec adaptive_bandwidth_nn(const arma::mat& coords, int k) {
     vec bandwidths(n);
     
     for (int i = 0; i < n; ++i) {
+        if ((i & 255) == 0) Rcpp::checkUserInterrupt();
         vec distances = calculate_distances(coords, i);
         vec sorted_distances = sort(distances);
         bandwidths(i) = sorted_distances(k);
