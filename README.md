@@ -1,4 +1,4 @@
-# gwmvt: Geographically Weighted Multivariate Analysis Toolkit
+# gwmvt: Geographically Weighted Multivariate Analysis
 
 [![R Package](https://img.shields.io/badge/R%20Package-gwmvt-blue)](https://github.com/patauchi/gwmvt)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -212,10 +212,3 @@ If you use this package in your research, please cite:
 ## License
 
 This package is licensed under GPL (>= 3).
-
-## Acknowledgments
-
-This package builds upon the excellent work of:
-- Rcpp, RcppArmadillo, and RcppParallel development teams
-- Original GWPCA methodology developers
-- The R spatial analysis community
