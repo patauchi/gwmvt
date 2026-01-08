@@ -88,7 +88,14 @@ public:
         int n = data_.n_rows;
         
         // Process each location
-        if (config_.parallel_strategy != ParallelStrategy::SEQUENTIAL && n > 100) {
+        bool can_parallel = false;
+#ifdef _OPENMP
+        can_parallel = (config_.parallel_strategy != ParallelStrategy::SEQUENTIAL && n > 100);
+#else
+        // Without OpenMP support, always run sequential to preserve progress updates
+        can_parallel = false;
+#endif
+        if (can_parallel) {
             fit_parallel();
         } else {
             fit_sequential();

@@ -86,7 +86,8 @@ If "adaptive" is used, it behaves as gaussian with adaptive bandwidth.}
 }
 \value{
 A list of class 'gwpca' containing:
-  \item{eigenvalues}{Matrix (n x p) of eigenvalues at each location}
+  \item{eigenvalues}{Matrix (n x p) of eigenvalues (variances) at each location}
+  \item{sdev}{Matrix (n x p) of standard deviations of PCs (sqrt of eigenvalues)}
   \item{loadings}{3D array (n x p x k) of component loadings}
   \item{scores}{Matrix (n x k) of component scores}
   \item{var_explained}{Matrix (n x k) of variance explained proportions}

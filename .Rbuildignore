@@ -1,4 +1,14 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^.*\.Rhistory
-ref
+^.*\.Rhistory$
+^/ref
+^inst/notes/
+^.*\.o$
+^.*\.so$
+^.*\.dll$
+^src/*.o
+^src/*.so
+^src/*.dll
+^ref/src/
+^.*__pycache__.*
+^.*\.pyc$

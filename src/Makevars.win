@@ -1,12 +1,34 @@
-## C++ optimization flags for high performance on Windows
+## C++ optimization flags for high performance
 CXX_STD = CXX17
 
-## Enable OpenMP for parallelization on Windows
+## Compiler settings for Windows
+CXX = g++
+CXX11 = g++
+CXX14 = g++
+CXX17 = g++
+CC = gcc
+
+## Enable OpenMP for parallelization
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
-PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS)
 
 ## Additional flags for Armadillo
-PKG_CXXFLAGS += -DARMA_NO_DEBUG -DARMA_DONT_USE_WRAPPER -DARMA_USE_LAPACK -DARMA_USE_BLAS -DARMA_DONT_PRINT_FAST_MATH_WARNING
+PKG_CXXFLAGS += -DARMA_NO_DEBUG -DARMA_DONT_USE_WRAPPER -DARMA_USE_LAPACK -DARMA_USE_BLAS
+PKG_CXXFLAGS += -DARMA_DONT_PRINT_FAST_MATH_WARNING
 
-## Include paths
-PKG_CPPFLAGS = -I../inst/include
+## Include paths - Windows uses forward slashes in Makevars
+PKG_CPPFLAGS = -I. -I./core -I./methods -I./base
+
+## Optimization flags
+PKG_CXXFLAGS += -O2 -march=nocona -mtune=core2
+
+## Add Fortran libraries explicitly if needed
+## Find Rtools path (adjust if using different Rtools version)
+ifeq "$(RTOOLS43_HOME)" ""
+    RTOOLS_PATH = C:/rtools43
+else
+    RTOOLS_PATH = $(RTOOLS43_HOME)
+endif
+
+## Add gfortran libraries
+PKG_LIBS += -L"$(RTOOLS_PATH)/x86_64-w64-mingw32.static.posix/lib" -lgfortran -lquadmath -lwinpthread
